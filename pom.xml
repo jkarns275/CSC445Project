@@ -8,5 +8,11 @@
     <artifactId>CSC445HW3</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>co.paralleluniverse</groupId>
+            <artifactId>quasar-core</artifactId>
+            <version>0.7.9</version>
+        </dependency>
+    </dependencies>
 </project>

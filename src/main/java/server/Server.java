@@ -1,10 +1,10 @@
-package Server;
+package server;
 
 import java.util.HashMap;
 
 public class Server {
 
-    HashMap<Integer,ChatRoom> chatRooms = new HashMap<Integer, ChatRoom>();
+    HashMap<Integer, Channel> chatRooms = new HashMap<Integer, Channel>();
 
     public static void main(String[] args) {
         new Server().listen();
@@ -24,11 +24,11 @@ public class Server {
 
     }
 
-    private void addUser(ChatRoom chatRoom) {
+    private void addUser(Channel chatRoom) {
 
     }
 
-    private void deleteUser(ChatRoom chatRoom) {
+    private void deleteUser(Channel chatRoom) {
 
     }
 }

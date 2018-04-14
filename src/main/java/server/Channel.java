@@ -1,8 +1,8 @@
-package Server;
+package server;
 
 import java.util.ArrayList;
 
-public class ChatRoom {
+public class Channel {
 
     ArrayList<User> users;
 
