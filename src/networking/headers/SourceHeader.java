@@ -24,6 +24,9 @@ public class SourceHeader implements Header {
 
   }
 
+  @Override
+  public int opcode() { return Constants.OP_SOURCE; }
+
   public String getAssignedUsername() {
     return assignedUsername;
   }

@@ -25,6 +25,9 @@ public class WriteHeader implements Header {
 
   }
 
+  @Override
+  public int opcode() { return Constants.OP_WRITE; }
+
   public String getMsg() {
     return msg;
   }

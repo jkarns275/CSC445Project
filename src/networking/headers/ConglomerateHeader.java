@@ -47,4 +47,7 @@ public class ConglomerateHeader implements Header {
     for (int i = 0; i < size; i += 1)
       headers.add(HeaderFactory.getInstance().readHeader(in));
   }
+
+  @Override
+  public int opcode() { return OP_CONG; }
 }

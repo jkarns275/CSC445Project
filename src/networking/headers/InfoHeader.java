@@ -37,13 +37,18 @@ public class InfoHeader implements Header {
 
   InfoHeader() { }
 
+  @Override
   public void writeObject(ObjectOutputStream out) throws IOException {
 
   }
 
+  @Override
   public void readObject(ObjectInputStream in) throws IOException {
 
   }
+
+  @Override
+  public int opcode() { return Constants.OP_INFO; }
 
   public long getChannelID() {
     return channelID;

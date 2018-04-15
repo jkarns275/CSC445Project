@@ -15,13 +15,18 @@ public class JoinHeader implements Header {
 
   JoinHeader() { }
 
+  @Override
   public void writeObject(ObjectOutputStream out) throws IOException {
 
   }
 
+  @Override
   public void readObject(ObjectInputStream in) throws IOException {
 
   }
+
+  @Override
+  public int opcode() { return Constants.OP_JOIN; }
 
   public String getDesiredUsername() {
     return desiredUsername;

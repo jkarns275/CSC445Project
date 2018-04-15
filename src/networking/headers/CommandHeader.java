@@ -24,4 +24,7 @@ public class CommandHeader implements Header {
   public void readObject(ObjectInputStream in) throws IOException {
     // TODO: this
   }
+
+  @Override
+  public int opcode() { return Constants.OP_COMMAND; }
 }

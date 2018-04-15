@@ -15,6 +15,7 @@ public class NakHeader implements Header {
 
   NakHeader() {}
 
+  @Override
   public void writeObject(ObjectOutputStream out) throws IOException {
     out.writeByte(Constants.OP_NAK);
     out.writeLong(lowerMsgID);
@@ -22,11 +23,15 @@ public class NakHeader implements Header {
     out.writeLong(channelID);
   }
 
+  @Override
   public void readObject(ObjectInputStream in) throws IOException {
     this.lowerMsgID = in.readLong();
     this.upperMsgID = in.readLong();
     this.channelID = in.readLong();
   }
+
+  @Override
+  public int opcode() { return Constants.OP_NAK; }
 
   public long getChannelID() {
     return channelID;

@@ -1,11 +1,8 @@
 package networking.headers;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 
 public interface Header {
   /**
@@ -14,4 +11,5 @@ public interface Header {
    */
   void writeObject(ObjectOutputStream out) throws IOException;
   void readObject(ObjectInputStream in) throws IOException;
+  public int opcode();
 }
