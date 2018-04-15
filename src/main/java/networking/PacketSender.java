@@ -7,14 +7,14 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 public class PacketSender implements Runnable {
-  private final SocketAddress to;
+  private final InetSocketAddress to;
   private final SocketSemaphore socket;
   private final Header packet;
-  public PacketSender(Header packet, SocketAddress to, SocketSemaphore socket) {
+  public PacketSender(Header packet, InetSocketAddress to, SocketSemaphore socket) {
     this.to = to;
     this.socket = socket;
     this.packet = packet;

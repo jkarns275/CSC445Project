@@ -2,7 +2,7 @@ package networking;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.Semaphore;
 
 public class SocketSemaphore {
@@ -14,8 +14,8 @@ public class SocketSemaphore {
     socket = new DatagramSocket(port);
   }
 
-  public SocketSemaphore(SocketAddress socketAddress) throws IOException {
-    socket = new DatagramSocket(socketAddress);
+  public SocketSemaphore(InetSocketAddress InetSocketAddress) throws IOException {
+    socket = new DatagramSocket(InetSocketAddress);
   }
 
   public DatagramSocket acquire() throws InterruptedException {
