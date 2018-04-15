@@ -14,9 +14,7 @@ public class HeartbeatHeader implements Header {
     out.writeByte(Constants.OP_HEARTBEAT);
   }
 
-  public void readObject(ObjectInputStream in) throws IOException {
-    if ((int) in.readByte() != Constants.OP_HEARTBEAT) throw new IOException("Wrong opcode for heartbeat header.");
-  }
+  public void readObject(ObjectInputStream in) throws IOException { }
 
   @Override
   public int opcode() { return Constants.OP_HEARTBEAT; }

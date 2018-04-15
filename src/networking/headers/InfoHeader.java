@@ -39,30 +39,34 @@ public class InfoHeader implements Header {
 
   @Override
   public void writeObject(ObjectOutputStream out) throws IOException {
-
+    out.writeByte(opcode());
+    out.writeLong(this.channelID);
+    out.writeByte(this.infoCode);
+    out.writeLong(this.messageID);
+    out.writeShort(this.message.length());
+    out.writeBytes(message);
   }
 
   @Override
   public void readObject(ObjectInputStream in) throws IOException {
+    this.channelID = in.readLong();
+    this.infoCode = in.readByte();
+    this.messageID = in.readLong();
 
+    final int messageLen = in.readShort();
+    final byte[] p = new byte[messageLen];
+    if (in.read(p) != messageLen) throw new IOException("Prematurely encountered end of input stream.");
+    this.message = new String(p);
   }
 
   @Override
   public int opcode() { return Constants.OP_INFO; }
 
-  public long getChannelID() {
-    return channelID;
-  }
+  public long getChannelID() { return channelID; }
 
-  public byte getInfoCode() {
-    return infoCode;
-  }
+  public byte getInfoCode() { return infoCode; }
 
-  public long getMessageID() {
-    return messageID;
-  }
+  public long getMessageID() { return messageID; }
 
-  public String getMessage() {
-    return message;
-  }
+  public String getMessage() { return message; }
 }

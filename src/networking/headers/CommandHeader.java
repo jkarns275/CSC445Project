@@ -14,6 +14,7 @@ public class CommandHeader implements Header {
 
   CommandHeader() { }
 
+  @Override
   public void writeObject(ObjectOutputStream out) throws IOException {
     out.writeByte(Constants.OP_COMMAND);
     out.writeLong(channelID);
@@ -21,10 +22,19 @@ public class CommandHeader implements Header {
     out.writeBytes(command);
   }
 
+  @Override
   public void readObject(ObjectInputStream in) throws IOException {
-    // TODO: this
+    this.channelID = in.readLong();
+
+    final int commandLen = (int) in.readByte();
+    final byte[] p = new byte[commandLen];
+    if (in.read(p) != commandLen) throw new IOException("Prematurely encountered end of input stream.");
+    this.command = new String(p);
   }
 
   @Override
   public int opcode() { return Constants.OP_COMMAND; }
+
+  public String getCommand() { return this.command; }
+  public long getChannelID() { return this.channelID; }
 }

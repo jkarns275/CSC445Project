@@ -37,12 +37,6 @@ public class ConglomerateHeader implements Header {
   }
 
   public final void readObject(ObjectInputStream in) throws IOException {
-    in.mark(MAX_HEADER_SIZE);
-    int opcode = (int) in.readByte();
-    if (opcode != OP_CONG) {
-      throw new IOException("Wrong opcode for ConglomerateHeader.");
-    }
-
     int size = (int) in.readByte();
     for (int i = 0; i < size; i += 1)
       headers.add(HeaderFactory.getInstance().readHeader(in));
@@ -50,4 +44,7 @@ public class ConglomerateHeader implements Header {
 
   @Override
   public int opcode() { return OP_CONG; }
+
+  public LinkedList<Header> getHeaders() { return this.headers; }
+  public int size() { return this.headers.size(); }
 }

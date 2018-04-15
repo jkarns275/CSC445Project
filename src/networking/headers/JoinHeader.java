@@ -16,17 +16,29 @@ public class JoinHeader implements Header {
   JoinHeader() { }
 
   @Override
-  public void writeObject(ObjectOutputStream out) throws IOException {
-
+  public final void writeObject(ObjectOutputStream out) throws IOException {
+    out.writeByte(opcode());
+    out.writeByte(desiredUsername.length());
+    out.writeBytes(desiredUsername);
+    out.writeByte(channelName.length());
+    out.writeBytes(channelName);
   }
 
   @Override
-  public void readObject(ObjectInputStream in) throws IOException {
+  public final void readObject(ObjectInputStream in) throws IOException {
+    final int desiredUsernameLen = (int) in.readByte();
+    byte[] p = new byte[desiredUsernameLen];
+    if (in.read(p) != desiredUsernameLen) throw new IOException("Prematurely encountered end of input stream.");
+    this.desiredUsername = new String(p);
 
+    final int channelNameLen = (int) in.readByte();
+    p = new byte[channelNameLen];
+    if (in.read(p) != channelNameLen) throw new IOException("Prematurely encountered end of input stream.");
+    this.channelName = new String(p);
   }
 
   @Override
-  public int opcode() { return Constants.OP_JOIN; }
+  public final int opcode() { return Constants.OP_JOIN; }
 
   public String getDesiredUsername() {
     return desiredUsername;

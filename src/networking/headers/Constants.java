@@ -11,11 +11,12 @@ public class Constants {
   protected final static int OP_HEARTBEAT=            0x06;
   protected final static int OP_INFO =                0x07;
   protected final static int OP_COMMAND =             0x08;
+  protected final static int OP_ACK =                 0x09;
   protected final static int OP_CONG =                0x0FF;
 
   protected final static int OPCODE_INDEX =           0;
 
-  protected final static long UNORDERED_MSG_ID = -1;
+  protected final static long UNORDERED_MSG_ID =      -1;
 
   // Maximum lengths of header fields
   protected final static int MAX_USERNAME_LEN =       0xFF;
