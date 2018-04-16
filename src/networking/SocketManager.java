@@ -24,8 +24,8 @@ public class SocketManager {
     this.begin(pool, socket);
   }
 
-  public SocketManager(InetSocketAddress InetSocketAddress, ThreadPoolExecutor pool) throws IOException {
-    socket = new DatagramSocket(InetSocketAddress);
+  public SocketManager(InetSocketAddress address, ThreadPoolExecutor pool) throws IOException {
+    socket = new DatagramSocket(address);
     this.begin(pool, socket);
   }
 

@@ -52,8 +52,6 @@ public class PacketSender implements SendJob {
     }
   }
 
-  public boolean isNeedsAck() { return needsAck; }
-
   @Override
   public boolean needsAck() { return this.needsAck; }
 
