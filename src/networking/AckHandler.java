@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-public class AckHandler implements Runnable {
+public class AckHandler implements AckJob {
 
   public class AckHandlerResult implements AckResult {
 
@@ -26,7 +26,7 @@ public class AckHandler implements Runnable {
       this.receivedAck = receivedAck; this.packet = packet; this.address = address; this.socket = socket;
     }
 
-    public Runnable resend() { return new PacketSender(this.packet, this.address, this.socket); }
+    public Runnable resend() { return new PacketSender(true, this.packet, this.address, this.socket); }
 
     public boolean wasSuccessful() { return receivedAck; }
   }
@@ -39,14 +39,14 @@ public class AckHandler implements Runnable {
   // A set of addresses that the server is still waiting for acks from.
   private final InetSocketAddress waitingFor;
   private final SynchronousQueue<InetSocketAddress> ackQueue;
-  private final SynchronousQueue<AckHandlerResult> resultQueue;
+  private final SynchronousQueue<AckResult> resultQueue;
   private final Header packet;
   private final SocketSemaphore socket;
 
-  public AckHandler(Header packet,
+  AckHandler(Header packet,
                     InetSocketAddress address,
                     SynchronousQueue<InetSocketAddress> ackQueue,
-                    SynchronousQueue<AckHandlerResult> resultQueue,
+                    SynchronousQueue<AckResult> resultQueue,
                     SocketSemaphore socket) {
     this.waitingFor = address; this.ackQueue = ackQueue; this.resultQueue = resultQueue;
     this.packet = packet; this.socket = socket;

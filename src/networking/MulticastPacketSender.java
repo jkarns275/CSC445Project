@@ -10,17 +10,17 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
+import java.util.concurrent.SynchronousQueue;
 
-public class MulticastPacketSender implements Runnable {
+public class MulticastPacketSender implements SendJob {
 
   private final HashSet<InetSocketAddress> recipients;
   private final SocketSemaphore socket;
   private final Header packet;
-  public MulticastPacketSender(Header packet, HashSet<InetSocketAddress> recipients, SocketSemaphore socket) {
-    this.recipients = recipients;
-    this.socket = socket;
-    this.packet = packet;
+  private final boolean needsAck;
 
+  MulticastPacketSender(boolean needsAck, Header packet, HashSet<InetSocketAddress> recipients, SocketSemaphore socket) {
+    this.needsAck = needsAck; this.recipients = recipients; this.socket = socket; this.packet = packet;
   }
 
   public void run() {
@@ -49,4 +49,16 @@ public class MulticastPacketSender implements Runnable {
       e.printStackTrace();
     }
   }
+
+  @Override
+  public boolean needsAck() {
+    return false;
+  }
+
+  @Override
+  public AckJob getAckJob(SynchronousQueue<InetSocketAddress> ackQueue, SynchronousQueue<AckResult> resultQueue) {
+   return new MulticastAckHandler(this.packet, this.recipients, ackQueue, resultQueue, this.socket);
+  }
+
+  public boolean isNeedsAck() { return this.needsAck; }
 }
