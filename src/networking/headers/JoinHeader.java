@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class JoinHeader implements Header {
+public class JoinHeader extends Header {
 
   private String desiredUsername =  "ERROR";
   private String channelName =      "ERROR";
@@ -39,6 +40,18 @@ public class JoinHeader implements Header {
 
   @Override
   public final int opcode() { return Constants.OP_JOIN; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    JoinHeader that = (JoinHeader) o;
+    return Objects.equals(desiredUsername, that.desiredUsername) &&
+      Objects.equals(channelName, that.channelName);
+  }
+
+  @Override
+  public int hashCode() { return desiredUsername.hashCode() ^ channelName.hashCode(); }
 
   public String getDesiredUsername() {
     return desiredUsername;

@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class CommandHeader implements Header {
+public class CommandHeader extends Header {
   private long channelID;
   private String command;
 
@@ -34,6 +35,18 @@ public class CommandHeader implements Header {
 
   @Override
   public int opcode() { return Constants.OP_COMMAND; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    CommandHeader that = (CommandHeader) o;
+    return channelID == that.channelID &&
+      Objects.equals(command, that.command);
+  }
+
+  @Override
+  public int hashCode() { return ((this.opcode() ^ this.command.hashCode()) >> 16) ^ Long.hashCode(channelID); }
 
   public String getCommand() { return this.command; }
   public long getChannelID() { return this.channelID; }

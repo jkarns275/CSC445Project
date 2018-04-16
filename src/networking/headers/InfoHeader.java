@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class InfoHeader implements Header {
+public class InfoHeader extends Header {
   /**
    * Recipient has been kicked from room.
    */
@@ -61,6 +62,22 @@ public class InfoHeader implements Header {
 
   @Override
   public int opcode() { return Constants.OP_INFO; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    InfoHeader that = (InfoHeader) o;
+    return channelID == that.channelID &&
+      infoCode == that.infoCode &&
+      messageID == that.messageID &&
+      Objects.equals(message, that.message);
+  }
+
+  @Override
+  public int hashCode() {
+    return (int) ((((this.channelID >> this.opcode()) >> this.infoCode) ^ this.message.hashCode()) ^ this.messageID);
+  }
 
   public long getChannelID() { return channelID; }
 

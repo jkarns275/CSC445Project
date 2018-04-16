@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class ErrorHeader implements Header {
+public class ErrorHeader extends Header {
 
   public static final byte ERROR_CONNECTION_CLOSED  = 0x00;
   public static final byte ERROR_INVALID_UNICODE    = 0x01;
@@ -35,4 +36,16 @@ public class ErrorHeader implements Header {
 
   @Override
   public int opcode() { return Constants.OP_ERROR; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    ErrorHeader that = (ErrorHeader) o;
+    return errorCode == that.errorCode &&
+      Objects.equals(errorMsg, that.errorMsg);
+  }
+
+  @Override
+  public int hashCode() { return this.errorMsg.hashCode() ^ (this.opcode() >> errorCode); }
 }

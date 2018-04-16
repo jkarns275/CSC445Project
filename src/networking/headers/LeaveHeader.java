@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class LeaveHeader implements Header {
+public class LeaveHeader extends Header {
 
   private long channelID;
 
@@ -24,6 +24,17 @@ public class LeaveHeader implements Header {
 
   @Override
   public int opcode() { return Constants.OP_LEAVE; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    LeaveHeader that = (LeaveHeader) o;
+    return channelID == that.channelID;
+  }
+
+  @Override
+  public int hashCode() { return Long.hashCode(this.channelID); }
 
   public long getChannelID() { return channelID; }
 }

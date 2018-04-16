@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class NakHeader implements Header {
+public class NakHeader extends Header {
   private long lowerMsgID;
   private long upperMsgID;
   private long channelID;
@@ -21,6 +22,22 @@ public class NakHeader implements Header {
     out.writeLong(lowerMsgID);
     out.writeLong(upperMsgID);
     out.writeLong(channelID);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    NakHeader nakHeader = (NakHeader) o;
+    return lowerMsgID == nakHeader.lowerMsgID &&
+      upperMsgID == nakHeader.upperMsgID &&
+      channelID == nakHeader.channelID;
+  }
+
+  @Override
+  public int hashCode() {
+
+    return Objects.hash(lowerMsgID, upperMsgID, channelID);
   }
 
   @Override
@@ -44,4 +61,5 @@ public class NakHeader implements Header {
   public long getLowerMsgID() {
     return lowerMsgID;
   }
+
 }

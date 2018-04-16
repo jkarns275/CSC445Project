@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class SourceHeader implements Header {
+public class SourceHeader extends Header {
 
   private long channelID;
   private String channelName      = "ERROR";
@@ -44,9 +45,22 @@ public class SourceHeader implements Header {
   @Override
   public int opcode() { return Constants.OP_SOURCE; }
 
+  @Override
+  public int hashCode() { return Long.hashCode(channelID) ^ this.channelName.hashCode() ^ this.assignedUsername.hashCode(); }
+
   public String getAssignedUsername() { return assignedUsername; }
 
   public String getChannelName() { return channelName; }
 
   public long getChannelID() { return channelID; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    SourceHeader that = (SourceHeader) o;
+    return channelID == that.channelID &&
+      Objects.equals(channelName, that.channelName) &&
+      Objects.equals(assignedUsername, that.assignedUsername);
+  }
 }

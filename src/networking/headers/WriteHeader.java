@@ -3,8 +3,9 @@ package networking.headers;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Objects;
 
-public class WriteHeader implements Header {
+public class WriteHeader extends Header {
 
   private long channelID;
   private long msgID;
@@ -46,6 +47,11 @@ public class WriteHeader implements Header {
   @Override
   public int opcode() { return Constants.OP_WRITE; }
 
+  @Override
+  public int hashCode() {
+    return Long.hashCode(this.channelID) ^ Long.hashCode(this.msgID) ^ this.msg.hashCode() ^ this.username.hashCode();
+  }
+
   public String getMsg() { return this.msg; }
 
   public String getUsername() { return this.username; }
@@ -53,4 +59,15 @@ public class WriteHeader implements Header {
   public long getChannelID() { return this.channelID; }
 
   public long getMsgID() { return msgID; }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    WriteHeader that = (WriteHeader) o;
+    return channelID == that.channelID &&
+      msgID == that.msgID &&
+      Objects.equals(msg, that.msg) &&
+      Objects.equals(username, that.username);
+  }
 }
