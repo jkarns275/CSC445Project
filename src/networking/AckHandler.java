@@ -3,9 +3,7 @@ package networking;
 import networking.headers.Header;
 
 import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class AckHandler implements AckJob {
@@ -20,13 +18,15 @@ public class AckHandler implements AckJob {
 
     private final InetSocketAddress address;
 
-    private final SocketSemaphore socket;
+    private final SocketManager socket;
 
-    AckHandlerResult(boolean receivedAck, Header packet, InetSocketAddress address, SocketSemaphore socket) {
+    AckHandlerResult(boolean receivedAck, Header packet, InetSocketAddress address, SocketManager socket) {
       this.receivedAck = receivedAck; this.packet = packet; this.address = address; this.socket = socket;
     }
 
-    public Runnable resend() { return new PacketSender(true, this.packet, this.address, this.socket); }
+    public SendJob resend(ArrayBlockingQueue<SendJob> doneQueue) {
+      return new PacketSender(true, this.packet, this.address, this.socket, doneQueue);
+    }
 
     public boolean wasSuccessful() { return receivedAck; }
   }
@@ -38,16 +38,16 @@ public class AckHandler implements AckJob {
 
   // A set of addresses that the server is still waiting for acks from.
   private final InetSocketAddress waitingFor;
-  private final SynchronousQueue<InetSocketAddress> ackQueue;
-  private final SynchronousQueue<AckResult> resultQueue;
+  private final ArrayBlockingQueue<InetSocketAddress> ackQueue;
+  private final ArrayBlockingQueue<AckResult> resultQueue;
   private final Header packet;
-  private final SocketSemaphore socket;
+  private final SocketManager socket;
 
   AckHandler(Header packet,
                     InetSocketAddress address,
-                    SynchronousQueue<InetSocketAddress> ackQueue,
-                    SynchronousQueue<AckResult> resultQueue,
-                    SocketSemaphore socket) {
+                    ArrayBlockingQueue<InetSocketAddress> ackQueue,
+                    ArrayBlockingQueue<AckResult> resultQueue,
+                    SocketManager socket) {
     this.waitingFor = address; this.ackQueue = ackQueue; this.resultQueue = resultQueue;
     this.packet = packet; this.socket = socket;
   }

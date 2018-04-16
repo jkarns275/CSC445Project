@@ -5,7 +5,7 @@ import networking.headers.Header;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class MulticastAckHandler implements AckJob {
@@ -20,14 +20,17 @@ public class MulticastAckHandler implements AckJob {
      */
     private final Header packet;
 
-    private final SocketSemaphore socket;
+    private final SocketManager socket;
 
-    MultiAckHandlerResult(HashSet<InetSocketAddress> missingAcks, Header packet, SocketSemaphore socket) {
+    MultiAckHandlerResult(HashSet<InetSocketAddress> missingAcks, Header packet, SocketManager socket) {
       this.missingAcks = missingAcks; this.packet = packet; this.socket = socket;
     }
 
-    public SendJob resend() { return new MulticastPacketSender(true, this.packet, this.missingAcks, this.socket); }
+    public SendJob resend(ArrayBlockingQueue<SendJob> doneQueue) {
+      return (SendJob) new MulticastPacketSender(true, this.packet, this.missingAcks, this.socket, doneQueue);
+    }
 
+    @Override
     public boolean wasSuccessful() { return missingAcks.isEmpty(); }
   }
 
@@ -38,16 +41,16 @@ public class MulticastAckHandler implements AckJob {
 
   // A set of addresses that the server is still waiting for acks from.
   private final HashSet<InetSocketAddress> waitingForAck = new HashSet<InetSocketAddress>();
-  private final SynchronousQueue<InetSocketAddress> ackQueue;
-  private final SynchronousQueue<AckResult> resultQueue;
+  private final ArrayBlockingQueue<InetSocketAddress> ackQueue;
+  private final ArrayBlockingQueue<AckResult> resultQueue;
   private final Header packet;
-  private final SocketSemaphore socket;
+  private final SocketManager socket;
 
   MulticastAckHandler(Header packet,
                              Collection<InetSocketAddress> addresses,
-                             SynchronousQueue<InetSocketAddress> ackQueue,
-                             SynchronousQueue<AckResult> resultQueue,
-                             SocketSemaphore socket) {
+                             ArrayBlockingQueue<InetSocketAddress> ackQueue,
+                             ArrayBlockingQueue<AckResult> resultQueue,
+                             SocketManager socket) {
     this.waitingForAck.addAll(addresses); this.ackQueue = ackQueue; this.resultQueue = resultQueue;
     this.packet = packet; this.socket = socket;
   }

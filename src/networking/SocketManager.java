@@ -1,38 +1,32 @@
 package networking;
 
-import com.sun.istack.internal.Nullable;
 import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import networking.headers.Constants;
 import networking.headers.Header;
 import networking.headers.HeaderFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.*;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
-public class SocketSemaphore {
+public class SocketManager {
   public static SocketJob job(Header header, InetSocketAddress to) { return new SocketJob(header, to); }
 
   private final DatagramSocket socket;
-  private final SynchronousQueue<SocketJob> readItems = new SynchronousQueue<>();
-  private final SynchronousQueue<SocketJob> toWrite = new SynchronousQueue<>();
+  private final ArrayBlockingQueue<SocketJob> receivedItems = new ArrayBlockingQueue<>(1024);
+  private final ArrayBlockingQueue<SocketJob> toSend = new ArrayBlockingQueue<>(1024);
 
-  public SocketSemaphore(int port, ThreadPoolExecutor pool) throws IOException {
+  public SocketManager(int port, ThreadPoolExecutor pool) throws IOException {
     socket = new DatagramSocket(port);
     this.begin(pool, socket);
   }
 
-  public SocketSemaphore(InetSocketAddress InetSocketAddress, ThreadPoolExecutor pool) throws IOException {
+  public SocketManager(InetSocketAddress InetSocketAddress, ThreadPoolExecutor pool) throws IOException {
     socket = new DatagramSocket(InetSocketAddress);
     this.begin(pool, socket);
-
   }
 
   private void begin(ThreadPoolExecutor pool, DatagramSocket socket) {
@@ -45,7 +39,7 @@ public class SocketSemaphore {
       final byte[] buffer = new byte[Constants.MAX_HEADER_SIZE];
       for (;;) {
         try {
-          final SocketJob job = toWrite.poll(100, TimeUnit.MILLISECONDS);
+          final SocketJob job = toSend.poll(0, TimeUnit.MILLISECONDS);
           final ByteOutputStream bout = new ByteOutputStream(Constants.MAX_HEADER_SIZE);
           final ObjectOutputStream out = new ObjectOutputStream(bout);
 
@@ -55,9 +49,9 @@ public class SocketSemaphore {
           final DatagramPacket toSend = new DatagramPacket(bout.getBytes(), bout.getCount());
           socket.send(toSend);
 
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         } catch (Exception e) {
-          System.err.println("Encountered error in SocketSemaphore:");
+          System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
         }
         try {
@@ -68,12 +62,11 @@ public class SocketSemaphore {
           final ObjectInputStream in = new ObjectInputStream(bin);
           final Header header = HeaderFactory.getInstance().readHeader(in);
 
-          readItems.put(job(header, new InetSocketAddress(received.getAddress(), received.getPort())));
+          receivedItems.put(job(header, new InetSocketAddress(received.getAddress(), received.getPort())));
 
-        } catch (IOException e) {
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         } catch (Exception e) {
-          System.err.println("Encountered error in SocketSemaphore");
+          System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
         }
       }
@@ -81,10 +74,12 @@ public class SocketSemaphore {
   }
 
   public void send(Header header, InetSocketAddress to) throws InterruptedException {
-    this.toWrite.put(SocketSemaphore.job(header, to));
+    if (this.toSend.offer(SocketManager.job(header, to))) return;
+    throw new InterruptedException();
   }
 
-  public SocketJob read() throws InterruptedException {
-    return this.readItems.poll(100, TimeUnit.MILLISECONDS);
+  public SocketJob recv() throws InterruptedException {
+    return this.receivedItems.poll(0, TimeUnit.MILLISECONDS);
   }
+
 }

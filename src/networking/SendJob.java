@@ -1,9 +1,12 @@
 package networking;
 
+import networking.headers.AckHeader;
+
 import java.net.InetSocketAddress;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public interface SendJob extends Runnable {
   boolean needsAck();
-  AckJob getAckJob(SynchronousQueue<InetSocketAddress> ackQueue, SynchronousQueue<AckResult> resultQueue);
+  AckJob getAckJob(ArrayBlockingQueue<InetSocketAddress> ackQueue, ArrayBlockingQueue<AckResult> resultQueue);
+  AckHeader getAckHeader();
 }
