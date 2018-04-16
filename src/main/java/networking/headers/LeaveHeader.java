@@ -5,6 +5,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 public class LeaveHeader implements Header {
+  public long channelID;
+
   public void writeObject(ObjectOutputStream out) throws IOException {
 
   }

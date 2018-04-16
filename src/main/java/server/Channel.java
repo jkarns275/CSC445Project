@@ -1,10 +1,23 @@
 package server;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.util.ArrayList;
 
 public class Channel {
-    public long chatRoomID;
+    public long channelID;
     public ArrayList<User> users;
+    String channelName;
+    InetAddress channelAdress;
+    MulticastSocket channelSocket;
+
+    public Channel(String channelName, InetAddress channelAdress, long id) throws IOException {
+        this.channelAdress = channelAdress;
+        this.channelName = channelName;
+        this.channelID = id;
+//        channelSocket = new MulticastSocket(27031);
+    }
 
     /**
      *
@@ -37,7 +50,11 @@ public class Channel {
     /**
      *
      **/
-    public void removeUser() {
-
+    public void removeUser(User user) {
+        for (User u : users) {
+            if (u.username.equals(user.username)) {
+                users.remove(u);
+            }
+        }
     }
 }
