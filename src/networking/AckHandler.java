@@ -59,7 +59,7 @@ public class AckHandler implements AckJob {
     try {
       while (ackQueue.isEmpty()) {
         Thread.sleep(4);
-        if (beginning.getEpochSecond() > timeout) {
+        if (Instant.now().getEpochSecond() - beginning.getEpochSecond() > timeout) {
           resultQueue.put(new AckHandlerResult(false, this.packet, this.waitingFor, this.socket));
           return;
         }

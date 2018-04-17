@@ -9,13 +9,20 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeaderIOManager {
   private final ThreadPoolExecutor pool;
   private final LinkedBlockingQueue<AckResult> ackResultQueue = new LinkedBlockingQueue<>(1024);
   private final HashMap<AckHeader, ArrayBlockingQueue<InetSocketAddress>> ackQueues = new HashMap<>();
   private final LinkedBlockingQueue<SendJob> doneQueue = new LinkedBlockingQueue<>(1024);
+
+  public SocketManager getSocket() {
+    return socket;
+  }
+
   private final SocketManager socket;
 
   public HeaderIOManager(InetSocketAddress address, int parallelism) throws IOException {
@@ -62,6 +69,8 @@ public class HeaderIOManager {
           SendJob sendJob = r.resend(doneQueue);
           sendJob.setNeedsAck(false);
           send(sendJob);
+        } else {
+          this.ackQueues.remove(r.resend(doneQueue).getAckHeader());
         }
       }
     } catch (InterruptedException e) {
@@ -77,4 +86,6 @@ public class HeaderIOManager {
   }
 
   public LinkedBlockingQueue<SendJob> getDoneQueue() { return doneQueue; }
+
+  public List<Runnable> shutdownNow() throws InterruptedException { this.socket.send(new KillRequest()); return this.pool.shutdownNow(); }
 }

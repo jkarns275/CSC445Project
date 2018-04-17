@@ -55,7 +55,7 @@ public class SocketManager {
           final SocketRequest job = toSend.poll(0, TimeUnit.MILLISECONDS);
 
           if (job != null) {
-            System.out.println("Sending " + job);
+            if (job instanceof KillRequest) return;
             job.getHeader().writeObject(out);
             out.close();
 
@@ -93,6 +93,11 @@ public class SocketManager {
 
   public void send(Header header, InetSocketAddress to) throws InterruptedException {
     if (this.toSend.offer(SocketManager.job(header, to))) return;
+    throw new InterruptedException();
+  }
+
+  void send(SocketRequest sr) throws InterruptedException {
+    if (this.toSend.offer(sr)) return;
     throw new InterruptedException();
   }
 
