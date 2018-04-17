@@ -1,36 +1,73 @@
 package networking;
 
 import networking.headers.AckHeader;
+import networking.headers.Constants;
 import networking.headers.Header;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.HashSet;
+import java.util.concurrent.*;
 
 public class HeaderIOManager {
   private final ThreadPoolExecutor pool;
-  private final ArrayBlockingQueue<AckResult> resultQueue = new ArrayBlockingQueue<>(1024);
+  private final LinkedBlockingQueue<AckResult> ackResultQueue = new LinkedBlockingQueue<>(1024);
   private final HashMap<AckHeader, ArrayBlockingQueue<InetSocketAddress>> ackQueues = new HashMap<>();
-  private final ArrayBlockingQueue<SendJob> doneQueue = new ArrayBlockingQueue<>(1024);
+  private final LinkedBlockingQueue<SendJob> doneQueue = new LinkedBlockingQueue<>(1024);
   private final SocketManager socket;
 
   public HeaderIOManager(InetSocketAddress address, int parallelism) throws IOException {
-    pool = (ThreadPoolExecutor) Executors.newWorkStealingPool(parallelism);
+    pool = new ThreadPoolExecutor(parallelism, parallelism, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     socket = new SocketManager(address, pool);
+  }
+
+  public SendJob packetSender(Header h, InetSocketAddress to) {
+    return new PacketSender(h.opcode() != Constants.OP_ACK, h, to, socket, doneQueue);
+  }
+
+  public SendJob multicastPacketSender(Header h, Collection<InetSocketAddress> to) {
+    return new MulticastPacketSender(h.opcode() != Constants.OP_ACK, h, new HashSet<>(to), socket, doneQueue);
   }
 
   public void send(SendJob job) { pool.execute(job); }
 
-  public Header recv() throws InterruptedException { throw new NotImplementedException(); }
+  public SocketRequest recv() throws InterruptedException { return socket.recv(); }
 
   /**
    * Updates the HeaderIOManager. This involves checking for finished SendJobs and resending them if necessary.
    */
-  public void update() {  }
+  public void update() {
+    // Process all SendJobs that have finished
+    try {
+      while (!doneQueue.isEmpty()) {
+        SendJob finishedJob = doneQueue.poll(0, TimeUnit.MILLISECONDS);
+        if (finishedJob.needsAck()) {
+          AckHeader header = finishedJob.getAckHeader();
+          ArrayBlockingQueue<InetSocketAddress> queue = new ArrayBlockingQueue<>(finishedJob.numClients());
+          ackQueues.put(header, queue);
+          pool.execute(finishedJob.getAckJob(queue, ackResultQueue));
+        }
+      }
+    } catch (InterruptedException e) {
+      System.err.println("Failed to poll from doneQueue without waiting.");
+    }
+
+    // Process all AckResults
+    try {
+      while (!ackResultQueue.isEmpty()) {
+        AckResult r = ackResultQueue.poll(0, TimeUnit.MILLISECONDS);
+        if (!r.wasSuccessful()) {
+          SendJob sendJob = r.resend(doneQueue);
+          sendJob.setNeedsAck(false);
+          send(sendJob);
+        }
+      }
+    } catch (InterruptedException e) {
+      System.err.println("Failed to poll from ackResultQueue without waiting.");
+    }
+  }
 
   public void processAckHeader(AckHeader ackHeader, InetSocketAddress source) throws InterruptedException {
     if (this.ackQueues.containsKey(ackHeader)) {
@@ -39,7 +76,5 @@ public class HeaderIOManager {
     }
   }
 
-  public ArrayBlockingQueue<SendJob> getDoneQueue() {
-    return doneQueue;
-  }
+  public LinkedBlockingQueue<SendJob> getDoneQueue() { return doneQueue; }
 }

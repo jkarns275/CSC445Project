@@ -23,6 +23,7 @@ public class HeaderFactory {
       case OP_INFO:       header = new InfoHeader();          break;
       case OP_COMMAND:    header = new CommandHeader();       break;
       case OP_CONG:       header = new ConglomerateHeader();  break;
+      case OP_ACK:        header = new AckHeader();           break;
       default:            throw new IOException("Invalid opcode: " + opcode);
     }
     header.readObject(in);

@@ -12,18 +12,19 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class MulticastPacketSender implements SendJob {
 
   private final HashSet<InetSocketAddress> recipients;
   private final SocketManager socket;
   private final Header packet;
-  private final boolean needsAck;
+  private boolean needsAck;
 
-  private ArrayBlockingQueue<SendJob> doneQueue;
+  private LinkedBlockingQueue<SendJob> doneQueue;
 
   MulticastPacketSender(boolean needsAck, Header packet, HashSet<InetSocketAddress> recipients, SocketManager socket,
-                        ArrayBlockingQueue<SendJob> doneQueue) {
+                        LinkedBlockingQueue<SendJob> doneQueue) {
     this.needsAck = needsAck; this.recipients = recipients; this.socket = socket; this.packet = packet;
     this.doneQueue = doneQueue;
   }
@@ -51,12 +52,18 @@ public class MulticastPacketSender implements SendJob {
   }
 
   @Override
-  public AckJob getAckJob(ArrayBlockingQueue<InetSocketAddress> ackQueue, ArrayBlockingQueue<AckResult> resultQueue) {
+  public void setNeedsAck(boolean needsAck) { this.needsAck = needsAck; }
+
+  @Override
+  public AckJob getAckJob(ArrayBlockingQueue<InetSocketAddress> ackQueue, LinkedBlockingQueue<AckResult> resultQueue) {
    return new MulticastAckHandler(this.packet, this.recipients, ackQueue, resultQueue, this.socket);
   }
 
   @Override
   public AckHeader getAckHeader() { return new AckHeader(packet); }
+
+  @Override
+  public int numClients() { return recipients.size(); }
 
   public boolean isNeedsAck() { return this.needsAck; }
 }

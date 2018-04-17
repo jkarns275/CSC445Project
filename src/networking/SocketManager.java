@@ -2,6 +2,7 @@ package networking;
 
 import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
+import networking.headers.AckHeader;
 import networking.headers.Constants;
 import networking.headers.Header;
 import networking.headers.HeaderFactory;
@@ -10,14 +11,20 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.concurrent.*;
 
 public class SocketManager {
-  public static SocketJob job(Header header, InetSocketAddress to) { return new SocketJob(header, to); }
+  // All opcodes will be considered 'Ackable' for now.
+  //private static HashSet<Integer> ACKABLE_OPCODES = new HashSet<Integer>();
+
+  public static SocketRequest job(Header header, InetSocketAddress to) { return new SocketRequest(header, to); }
 
   private final DatagramSocket socket;
-  private final ArrayBlockingQueue<SocketJob> receivedItems = new ArrayBlockingQueue<>(1024);
-  private final ArrayBlockingQueue<SocketJob> toSend = new ArrayBlockingQueue<>(1024);
+  private final LinkedBlockingQueue<SocketRequest> receivedItems = new LinkedBlockingQueue<>(1024);
+  private final LinkedBlockingQueue<SocketRequest> toSend = new LinkedBlockingQueue<>(1024);
 
   public SocketManager(int port, ThreadPoolExecutor pool) throws IOException {
     socket = new DatagramSocket(port);
@@ -31,40 +38,51 @@ public class SocketManager {
 
   private void begin(ThreadPoolExecutor pool, DatagramSocket socket) {
     pool.execute(() -> {
-      try {
-        socket.setSoTimeout(0);
-      } catch (SocketException e) {
-        e.printStackTrace();
-      }
       final byte[] buffer = new byte[Constants.MAX_HEADER_SIZE];
+
+      try {
+        socket.setSoTimeout(1);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return;
+      }
+
       for (;;) {
         try {
-          final SocketJob job = toSend.poll(0, TimeUnit.MILLISECONDS);
           final ByteOutputStream bout = new ByteOutputStream(Constants.MAX_HEADER_SIZE);
           final ObjectOutputStream out = new ObjectOutputStream(bout);
+          for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
+          final SocketRequest job = toSend.poll(0, TimeUnit.MILLISECONDS);
 
-          job.getHeader().writeObject(out);
-          out.close();
+          if (job != null) {
+            System.out.println("Sending " + job);
+            job.getHeader().writeObject(out);
+            out.close();
 
-          final DatagramPacket toSend = new DatagramPacket(bout.getBytes(), bout.getCount());
-          socket.send(toSend);
-
-        } catch (InterruptedException ignored) {
+            final DatagramPacket toSend = new DatagramPacket(bout.getBytes(), bout.getCount());
+            toSend.setSocketAddress(job.getAddress());
+            socket.send(toSend);
+          }
+        } catch (InterruptedException | SocketTimeoutException ignored) {
         } catch (Exception e) {
           System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
         }
         try {
+          for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
           final DatagramPacket received = new DatagramPacket(buffer, buffer.length);
           socket.receive(received);
 
           final ByteInputStream bin = new ByteInputStream(received.getData(), received.getLength());
           final ObjectInputStream in = new ObjectInputStream(bin);
           final Header header = HeaderFactory.getInstance().readHeader(in);
+          final InetSocketAddress src = new InetSocketAddress(received.getAddress(), received.getPort());
+          receivedItems.put(job(header, src));
 
-          receivedItems.put(job(header, new InetSocketAddress(received.getAddress(), received.getPort())));
-
-        } catch (InterruptedException ignored) {
+          if (header.opcode() != Constants.OP_ACK) {
+            toSend.put(job(new AckHeader(header), src));
+          }
+        } catch (InterruptedException | SocketTimeoutException ignored) {
         } catch (Exception e) {
           System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
@@ -78,8 +96,8 @@ public class SocketManager {
     throw new InterruptedException();
   }
 
-  public SocketJob recv() throws InterruptedException {
-    return this.receivedItems.poll(0, TimeUnit.MILLISECONDS);
+  public SocketRequest recv() throws InterruptedException {
+    return this.receivedItems.poll(100, TimeUnit.MILLISECONDS);
   }
 
 }

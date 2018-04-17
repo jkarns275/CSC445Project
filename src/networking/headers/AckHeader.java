@@ -13,6 +13,10 @@ public class AckHeader extends Header {
     this.body = body;
   }
 
+  AckHeader() {
+
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

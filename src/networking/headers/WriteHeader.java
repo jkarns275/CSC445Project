@@ -16,12 +16,14 @@ public class WriteHeader extends Header {
     this.channelID = channelID; this.msgID = msgID; this.msg = msg; this.username = username;
   }
 
-  WriteHeader() { }
+  public WriteHeader() { }
 
   @Override
   public final void writeObject(ObjectOutputStream out) throws IOException {
+    out.writeByte(opcode());
     out.writeLong(this.channelID);
     out.writeLong(this.msgID);
+    System.out.println("Msglen: " + this.msg.length());
     out.writeChar((char) this.msg.length());
     out.writeBytes(this.msg);
     out.writeByte(this.username.length());
@@ -34,8 +36,13 @@ public class WriteHeader extends Header {
     this.msgID = in.readLong();
 
     int msgLen = (int) in.readChar();
+    System.out.println("Msglen: " + msgLen);
     byte[] p = new byte[msgLen];
-    if (in.read(p) != msgLen) throw new IOException("Prematurely encountered end of input stream.");
+    int result = in.read(p);
+    System.out.print("[");
+    for (int i = 0; i < result; i++) System.out.print((char) p[i] + ", ");
+    System.out.println("]");
+    if (result != msgLen) throw new IOException("Prematurely encountered end of input stream.");
     this.msg = new String(p);
 
     int usernameLen = (int) in.readByte();

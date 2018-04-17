@@ -3,7 +3,9 @@ package networking;
 import networking.headers.Header;
 
 import java.net.InetSocketAddress;
+import java.time.Instant;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class AckHandler implements AckJob {
@@ -24,7 +26,7 @@ public class AckHandler implements AckJob {
       this.receivedAck = receivedAck; this.packet = packet; this.address = address; this.socket = socket;
     }
 
-    public SendJob resend(ArrayBlockingQueue<SendJob> doneQueue) {
+    public SendJob resend(LinkedBlockingQueue<SendJob> doneQueue) {
       return new PacketSender(true, this.packet, this.address, this.socket, doneQueue);
     }
 
@@ -39,21 +41,29 @@ public class AckHandler implements AckJob {
   // A set of addresses that the server is still waiting for acks from.
   private final InetSocketAddress waitingFor;
   private final ArrayBlockingQueue<InetSocketAddress> ackQueue;
-  private final ArrayBlockingQueue<AckResult> resultQueue;
+  private final LinkedBlockingQueue<AckResult> resultQueue;
   private final Header packet;
   private final SocketManager socket;
 
   AckHandler(Header packet,
                     InetSocketAddress address,
                     ArrayBlockingQueue<InetSocketAddress> ackQueue,
-                    ArrayBlockingQueue<AckResult> resultQueue,
+                    LinkedBlockingQueue<AckResult> resultQueue,
                     SocketManager socket) {
     this.waitingFor = address; this.ackQueue = ackQueue; this.resultQueue = resultQueue;
     this.packet = packet; this.socket = socket;
   }
 
   public void run() {
+    Instant beginning = Instant.now();
     try {
+      while (ackQueue.isEmpty()) {
+        Thread.sleep(4);
+        if (beginning.getEpochSecond() > timeout) {
+          resultQueue.put(new AckHandlerResult(false, this.packet, this.waitingFor, this.socket));
+          return;
+        }
+      }
       InetSocketAddress item = ackQueue.poll(timeout, TimeUnit.SECONDS);
       boolean isEqual =   item.getAddress().equals(this.waitingFor.getAddress())
                           && item.getPort() == this.waitingFor.getPort();

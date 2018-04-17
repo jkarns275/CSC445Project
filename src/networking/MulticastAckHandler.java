@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class MulticastAckHandler implements AckJob {
@@ -26,7 +27,7 @@ public class MulticastAckHandler implements AckJob {
       this.missingAcks = missingAcks; this.packet = packet; this.socket = socket;
     }
 
-    public SendJob resend(ArrayBlockingQueue<SendJob> doneQueue) {
+    public SendJob resend(LinkedBlockingQueue<SendJob> doneQueue) {
       return (SendJob) new MulticastPacketSender(true, this.packet, this.missingAcks, this.socket, doneQueue);
     }
 
@@ -42,14 +43,14 @@ public class MulticastAckHandler implements AckJob {
   // A set of addresses that the server is still waiting for acks from.
   private final HashSet<InetSocketAddress> waitingForAck = new HashSet<InetSocketAddress>();
   private final ArrayBlockingQueue<InetSocketAddress> ackQueue;
-  private final ArrayBlockingQueue<AckResult> resultQueue;
+  private final LinkedBlockingQueue<AckResult> resultQueue;
   private final Header packet;
   private final SocketManager socket;
 
   MulticastAckHandler(Header packet,
                              Collection<InetSocketAddress> addresses,
                              ArrayBlockingQueue<InetSocketAddress> ackQueue,
-                             ArrayBlockingQueue<AckResult> resultQueue,
+                             LinkedBlockingQueue<AckResult> resultQueue,
                              SocketManager socket) {
     this.waitingForAck.addAll(addresses); this.ackQueue = ackQueue; this.resultQueue = resultQueue;
     this.packet = packet; this.socket = socket;

@@ -11,18 +11,19 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 
 public class PacketSender implements SendJob {
   private final InetSocketAddress to;
   private final SocketManager socket;
   private final Header packet;
-  private final boolean needsAck;
+  private boolean needsAck;
 
-  private ArrayBlockingQueue<SendJob> doneQueue;
+  private LinkedBlockingQueue<SendJob> doneQueue;
 
   public PacketSender(boolean needsAck, Header packet, InetSocketAddress to, SocketManager socket,
-                      ArrayBlockingQueue<SendJob> doneQueue) {
+                      LinkedBlockingQueue<SendJob> doneQueue) {
     this.needsAck = needsAck; this.to = to; this.socket = socket; this.packet = packet; this.doneQueue = doneQueue;
   }
 
@@ -56,10 +57,16 @@ public class PacketSender implements SendJob {
   public boolean needsAck() { return this.needsAck; }
 
   @Override
-  public AckJob getAckJob(ArrayBlockingQueue<InetSocketAddress> ackQueue, ArrayBlockingQueue<AckResult> resultQueue) {
+  public void setNeedsAck(boolean needsAck) { this.needsAck = needsAck; }
+
+  @Override
+  public AckJob getAckJob(ArrayBlockingQueue<InetSocketAddress> ackQueue, LinkedBlockingQueue<AckResult> resultQueue) {
     return new AckHandler(this.packet, this.to, ackQueue, resultQueue, socket);
   }
 
   @Override
   public AckHeader getAckHeader() { return new AckHeader(packet); }
+
+  @Override
+  public int numClients() { return 1; }
 }
