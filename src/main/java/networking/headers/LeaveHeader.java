@@ -4,9 +4,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-public class LeaveHeader extends Header {
 
-  private long channelID;
+
+public class LeaveHeader extends Header {
+  public long channelID;
 
   public LeaveHeader(long channelID) { this.channelID = channelID; }
   LeaveHeader() {}

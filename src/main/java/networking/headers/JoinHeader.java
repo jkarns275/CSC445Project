@@ -57,7 +57,7 @@ public class JoinHeader extends Header {
     return desiredUsername;
   }
 
-  public String getChannelName() {
+    public String getChannelName() {
     return channelName;
   }
 }
