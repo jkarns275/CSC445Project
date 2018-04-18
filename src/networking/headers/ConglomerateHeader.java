@@ -1,5 +1,7 @@
 package networking.headers;
 
+import common.Constants;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -7,7 +9,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
 
-import static networking.headers.Constants.*;
+import static common.Constants.*;
 
 public class ConglomerateHeader extends Header {
 

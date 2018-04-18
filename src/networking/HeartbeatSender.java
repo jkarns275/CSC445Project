@@ -1,10 +1,9 @@
 package networking;
 
+import common.Constants;
 import networking.headers.HeartbeatHeader;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.time.Instant;
 import java.util.HashSet;
 
 /**
@@ -12,22 +11,22 @@ import java.util.HashSet;
  */
 public class HeartbeatSender {
 
-  private final static long HEARTBEAT_INTERVAL = 8; // Every 8 seconds
+  private final static long HEARTBEAT_INTERVAL = 8 * Constants.SECONDS_TO_NANOS; // Every 8 seconds
 
   private final HashSet<Long> channels = new HashSet<>();
   private final SocketManager socket;
   private final InetSocketAddress serverAddress;
-  private Instant lastSendTime;
+  private long lastSendTime;
   private final HeartbeatHeader heartbeatHeader = new HeartbeatHeader(0);
 
   public HeartbeatSender(SocketManager socket, InetSocketAddress serverAddress) {
-    this.lastSendTime = Instant.now();
+    this.lastSendTime = System.nanoTime();
     this.socket = socket;
     this.serverAddress = serverAddress;
   }
 
   public void update() throws InterruptedException {
-    if (Instant.now().getEpochSecond() - this.lastSendTime.getEpochSecond() > HeartbeatSender.HEARTBEAT_INTERVAL) this.send();
+    if (System.nanoTime() - this.lastSendTime > HeartbeatSender.HEARTBEAT_INTERVAL) this.send();
   }
 
   public void addChannel(long channelID) throws InterruptedException {
@@ -38,7 +37,7 @@ public class HeartbeatSender {
   public void removeChannel(long channelID) { this.channels.remove(channelID); }
 
   private void send() throws InterruptedException {
-    this.lastSendTime = Instant.now();
+    this.lastSendTime = System.nanoTime();
     for (Long channel : this.channels) {
       this.heartbeatHeader.setChannelID(channel);
       this.socket.send(this.heartbeatHeader, this.serverAddress);

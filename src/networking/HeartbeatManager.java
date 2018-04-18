@@ -1,10 +1,8 @@
 package networking;
 
-import javax.swing.text.html.Option;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
 
 public class HeartbeatManager {

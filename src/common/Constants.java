@@ -1,4 +1,4 @@
-package networking.headers;
+package common;
 
 public class Constants {
   // Opcode values.
@@ -17,6 +17,7 @@ public class Constants {
   public final static int OPCODE_INDEX =           0;
 
   public final static long UNORDERED_MSG_ID =      -1;
+  public final static long CLIENT_HEARTBEAT_CHANNEL = -1;
 
   // Maximum lengths of header fields
   public final static int MAX_USERNAME_LEN =       0xFF;
@@ -38,4 +39,6 @@ public class Constants {
   public final static int MSG_ID_SIZE =            8;
 
   public final static int MAX_HEADER_SIZE =        1024 * 64; // 64 kilobytes
+
+  public final static long SECONDS_TO_NANOS =      1_000_000_000;
 }

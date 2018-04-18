@@ -1,7 +1,7 @@
 package networking;
 
 import networking.headers.AckHeader;
-import networking.headers.Constants;
+import common.Constants;
 import networking.headers.Header;
 
 import java.io.IOException;
@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeaderIOManager {
   private final ThreadPoolExecutor pool;

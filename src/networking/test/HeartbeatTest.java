@@ -4,14 +4,11 @@ import networking.HeaderIOManager;
 import networking.HeartbeatManager;
 import networking.HeartbeatSender;
 import networking.SocketRequest;
-import networking.headers.Constants;
+import common.Constants;
 import networking.headers.HeartbeatHeader;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +34,6 @@ public class HeartbeatTest {
             heartbeatSender.addChannel(++channelID);
             heartbeatSender.update();
             SocketRequest sr = hiom.recv();
-            //if (sr != null) { }
             if (System.nanoTime() - beginning > 2_000_000_000) break;
           } catch (InterruptedException ignored) {
           } catch (Exception e) {
