@@ -16,7 +16,7 @@ public class WriteHeader extends Header {
     this.channelID = channelID; this.msgID = msgID; this.msg = msg; this.username = username;
   }
 
-  public WriteHeader() { }
+  public WriteHeader() {}
 
   @Override
   public final void writeObject(ObjectOutputStream out) throws IOException {
@@ -66,6 +66,10 @@ public class WriteHeader extends Header {
   public long getChannelID() { return this.channelID; }
 
   public long getMsgID() { return msgID; }
+
+  public void setMsgID(long msgID) {
+    this.msgID = msgID;
+  }
 
   @Override
   public boolean equals(Object o) {

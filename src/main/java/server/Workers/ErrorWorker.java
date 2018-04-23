@@ -1,8 +1,10 @@
 package server.Workers;
 
+import networking.headers.ErrorHeader;
+
 public class ErrorWorker implements Runnable {
 
-    public ErrorWorker() {
+    public ErrorWorker(ErrorHeader header) {
 
     }
 

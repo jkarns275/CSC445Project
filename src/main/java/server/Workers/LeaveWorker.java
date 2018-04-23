@@ -1,45 +1,33 @@
 package server.Workers;
 
-import javafx.scene.chart.PieChart;
+import networking.PacketSender;
 import networking.headers.ErrorHeader;
 import networking.headers.LeaveHeader;
+import server.Channel;
 import server.Server;
+import server.User;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class LeaveWorker implements Runnable {
     LeaveHeader leaveHeader;
-    InetAddress address;
-    Server server = Server.getInstance();
-    int port;
-    DatagramPacket packet;
+    InetSocketAddress address;
 
-    public LeaveWorker(LeaveHeader leaveHeader, DatagramPacket packet) {
+    public LeaveWorker(LeaveHeader leaveHeader, InetSocketAddress address) {
         this.leaveHeader = leaveHeader;
-        this.address = packet.getAddress();
-        this.port = packet.getPort();
-        this.packet = packet;
+        this.address = address;
     }
 
     public void run() {
-        server.channels.get(leaveHeader.channelID).users.remove(address);
-        ErrorHeader header = new ErrorHeader((byte)0x00,"Connection closed");
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = null;
-        try {
-            objectOutputStream = new ObjectOutputStream(bos);
-            header.writeObject(objectOutputStream);
-            byte[] bytes = bos.toByteArray();
-            DatagramPacket datagram = new DatagramPacket(bytes,bytes.length,address,port);
-            server.send(datagram);
-            server.sendMulticast(packet);
-            //Need to add ip address and packet to ack queue
-        } catch (IOException e) {
-            e.printStackTrace();
+        Channel channel = Server.channels.get(leaveHeader.channelID);
+        for (User user : channel.users.values()) {
+            if (user.address.getAddress().equals(address.getAddress())) {
+                channel.removeUser(user);
+                break;
+            }
         }
+        ErrorHeader header = new ErrorHeader((byte)0x00,"Connection closed");
+        PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
+        packetSender.run();
     }
 }

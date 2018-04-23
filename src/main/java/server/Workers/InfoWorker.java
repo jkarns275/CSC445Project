@@ -1,8 +1,10 @@
 package server.Workers;
 
+import networking.headers.InfoHeader;
+
 public class InfoWorker implements Runnable {
 
-    public InfoWorker() {
+    public InfoWorker(InfoHeader header) {
 
     }
 

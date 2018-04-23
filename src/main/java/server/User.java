@@ -1,15 +1,23 @@
 package server;
 
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class User {
     public String username;
-    public InetAddress address;
-    public int port;
+    public InetSocketAddress address;
+    private boolean muted = false;
 
-    public User (String username, InetAddress address, int port) {
+
+    public User (String username, InetSocketAddress address) {
         this.username = username;
         this.address = address;
-        this.port = port;
+    }
+
+    public void setMuted(boolean muted) {
+        this.muted = muted;
+    }
+
+    public boolean getMuted() {
+        return muted;
     }
 }

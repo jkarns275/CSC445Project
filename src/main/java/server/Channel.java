@@ -1,32 +1,49 @@
 package server;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
+import networking.MulticastPacketSender;
+import networking.PacketSender;
+import networking.headers.Header;
+
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Channel {
     public long channelID;
-    public ArrayList<User> users;
-    String channelName;
-    InetAddress channelAdress;
-    MulticastSocket channelSocket;
+    private long msgID = 0;
 
-    public Channel(String channelName, InetAddress channelAdress, long id) throws IOException {
-        this.channelAdress = channelAdress;
+    public final Object lock = new Object();
+
+    public String channelName;
+
+    public HashMap<String, User> users = new HashMap<>();
+
+    /*
+     * TreeMap buffering messages sent from the server to clients in the given channel.
+     */
+    private TreeMap<Long,Header> treeMap = new TreeMap<>();
+
+    public Channel(String channelName, long id) {
         this.channelName = channelName;
         this.channelID = id;
-//        channelSocket = new MulticastSocket(27031);
     }
 
-    /**
+    /*
      *
-     **/
+     */
     public String addUser(User user) {
         String tmpName = null;
-        for (User u : users) {
-            if (u.username.equals(user.username)) {
-                tmpName = u.username;
+        String number;
+        int userNumber = 0;
+        for (User u : users.values()) {
+            if (u.username.split("-")[0].equals(user.username)) {
+                if ((number = u.username.split("-")[1]) != null) {
+                    if (Integer.parseInt(number) > userNumber) {
+                        userNumber = Integer.parseInt(number);
+                        tmpName = u.username;
+                    }
+                }
             }
         }
         if (tmpName != null) {
@@ -40,21 +57,53 @@ public class Channel {
                 newName = tmpName + "-1";
             }
             user.username = newName;
-            users.add(user);
+            users.put(user.username,user);
             return newName;
         }
-        users.add(user);
+        users.put(user.username,user);
         return user.username;
     }
 
-    /**
+    /*
      *
-     **/
+     */
     public void removeUser(User user) {
-        for (User u : users) {
-            if (u.username.equals(user.username)) {
-                users.remove(u);
-            }
+        users.remove(user.username);
+    }
+
+    /*
+     *
+     */
+    public void sendPacket(Header header) {
+        ArrayList<InetSocketAddress> addresses = new ArrayList<>();
+        for (User user : users.values()) addresses.add(user.address);
+        MulticastPacketSender packetSender = (MulticastPacketSender) Server.headerManager.multicastPacketSender(header,addresses);
+        packetSender.run();
+    }
+
+    public void sendPacket(Header header, InetSocketAddress address) {
+        PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
+        packetSender.run();
+    }
+
+    public long getAndIncrementMsgID() {
+        long tmp = msgID;
+        ++msgID;
+        return tmp;
+    }
+
+    public synchronized void addToTreeMap(Long msgID, Header header) {
+        this.treeMap.put(msgID,header);
+        if (treeMap.keySet().size() > 100) {
+
         }
+    }
+
+    public synchronized void removeFromTreeMap(Long msgID) {
+        this.treeMap.remove(msgID);
+    }
+
+    public synchronized Header getFromTreeMap(Long msgID) {
+        return this.treeMap.get(msgID);
     }
 }

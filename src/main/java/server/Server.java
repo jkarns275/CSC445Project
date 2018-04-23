@@ -1,25 +1,32 @@
 package server;
 
+import networking.HeaderIOManager;
+import networking.HeartbeatManager;
+import networking.SocketRequest;
 import networking.headers.*;
 import server.Workers.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.*;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class Server {
-    MulticastSocket multicastSocket;
-    DatagramSocket serverSocket;
+    public static final int port = 2703;
+    private final int MAX_THREADS = 10;
+    private final int MAX_POOL_SIZE = 15;
+    private final int KEEP_ALIVE_TIME = 100;
+
+    public static HashMap<Long, Channel> channels = new HashMap<>();
+    public HashMap<InetSocketAddress, User> users = new HashMap<>();
+
+    private ThreadPoolExecutor executorPool = new ThreadPoolExecutor(MAX_THREADS,MAX_POOL_SIZE,KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>(1024));
+
+    public static HeaderIOManager headerManager;
+
+    public static HeartbeatManager heartbeatManager;
+
     DatagramPacket packet;
-    byte[] message;
-    public HashMap<String, Channel> channels = new HashMap<String, Channel>();
-    public HashMap<InetAddress, User> users = new HashMap<InetAddress, User>();
-    HeaderFactory headerFactory = HeaderFactory.getInstance();
-    ExecutorService executor = Executors.newFixedThreadPool(10);
 
     private static Server instance = null;
     static {
@@ -33,10 +40,9 @@ public class Server {
     }
 
     private Server() throws IOException {
-        serverSocket = new DatagramSocket(2703);
-        multicastSocket = new MulticastSocket(27030);
         this.init();
-        multicastSocket.joinGroup(InetAddress.getByName("230.0.0.0"));
+        headerManager = new HeaderIOManager(new InetSocketAddress(port),15);
+        heartbeatManager = new HeartbeatManager();
     }
 
     public static Server getInstance() { return instance; }
@@ -44,87 +50,72 @@ public class Server {
     /*
      *
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         Server server = new Server();
         server.listen();
     }
 
     /*
-     * Need to decide if channels are all on the same mutlicast address or if they are on separate addresses
+     *
      */
-    private void init() throws IOException {
-        String[] addresses = {"230.0.0.0","230.0.0.1","230.0.0.2"};
+    private void init() {
         String[] names = {"Channel1","Channel2","Channel3"};
         long[] ids = {31415, 8314, 27345};
-        for (int i = 0; i < addresses.length; i++) {
-            InetAddress inetAddress = InetAddress.getByName(addresses[i]);
-            channels.put(names[i],new Channel(names[i],inetAddress,ids[i]));
+        for (int i = 0; i < names.length; i++) {
+            channels.put(ids[i],new Channel(names[i],ids[i]));
         }
     }
 
-    /*
-     *
-     */
-    public synchronized void sendMulticast(DatagramPacket datagramPacket) throws IOException {
-        multicastSocket.send(datagramPacket);
+    public static Channel getChannel(Long channelID) {
+        if (channels.containsKey(channelID)) {
+            return channels.get(channelID);
+        }
+        return null;
     }
 
     /*
      *
      */
-    public synchronized void send(DatagramPacket datagramPacket) throws IOException {
-        serverSocket.send(datagramPacket);
-    }
-
-    /*
-     *
-     */
-    public void listen() throws IOException {
+    public void listen() throws IOException, InterruptedException {
         while (true) {
-            message = new byte[2048];
-            packet = new DatagramPacket(message, message.length);
-            serverSocket.receive(packet);
-//            multicastSocket.receive(packet);
+            SocketRequest request = headerManager.recv();
+            Header header = request.getHeader();
+            switch (header.opcode()) {
+                case 0x00:
+                    executorPool.execute(new WriteWorker((WriteHeader) header,
+                            new InetSocketAddress(packet.getAddress(), packet.getPort())));
+                    break;
 
-            ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData());
-            ObjectInputStream objectInputStream = new ObjectInputStream(bis);
-            Header header = headerFactory.readHeader(objectInputStream);
+                case 0x01:
+                    executorPool.execute(new JoinWorker((JoinHeader) header,
+                            new InetSocketAddress(packet.getAddress(),packet.getPort())));
+                    break;
 
-            if (header instanceof JoinHeader) {
-                JoinWorker worker = new JoinWorker((JoinHeader) header, packet);
-                executor.execute(worker);
+                case 0x02:
+                    executorPool.execute(new LeaveWorker((LeaveHeader) header,
+                            new InetSocketAddress(packet.getAddress(),packet.getPort())));
+                    break;
 
-            } else if (header instanceof WriteHeader) {
-                WriteWorker worker = new WriteWorker((WriteHeader) header, packet.getAddress(), packet.getPort());
-                executor.execute(worker);
+                case 0x04:
+                    executorPool.execute(new NakWorker((NakHeader) header,
+                            new InetSocketAddress(packet.getAddress(),packet.getPort())));
+                    break;
 
-            } else if (header instanceof LeaveHeader) {
-                LeaveWorker leaveWorker = new LeaveWorker((LeaveHeader) header, packet);
-                executor.execute(leaveWorker);
+                case 0x05:
+                    executorPool.execute(new ErrorWorker((ErrorHeader) header));
+                    break;
 
-            } else if (header instanceof NakHeader) {
-                NakWorker worker = new NakWorker();
-                executor.execute(worker);
+                case 0x06:
+                    executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header));
+                    break;
 
-            } else if (header instanceof CommandHeader) {
-                CommandWorker worker = new CommandWorker();
-                executor.execute(worker);
+                case 0x08:
+                    executorPool.execute(new CommandWorker((CommandHeader) header));
+                    break;
 
-            } else if (header instanceof ConglomerateHeader) {
-                ConglomerateWorker worker = new ConglomerateWorker();
-                executor.execute(worker);
-
-            } else if (header instanceof ErrorHeader) {
-                ErrorWorker worker = new ErrorWorker();
-                executor.execute(worker);
-
-            } else if (header instanceof HeartbeatHeader) {
-                HeartBeatWorker worker = new HeartBeatWorker();
-                executor.execute(worker);
-
-            } else if (header instanceof InfoHeader) {
-                InfoWorker worker = new InfoWorker();
-                executor.execute(worker);
+                case 0x0FF:
+                    executorPool.execute(new ConglomerateWorker((ConglomerateHeader) header));
+                    break;
 
             }
         }

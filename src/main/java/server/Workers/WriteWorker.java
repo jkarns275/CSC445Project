@@ -1,24 +1,35 @@
 package server.Workers;
 
+import networking.PacketSender;
+import networking.headers.ErrorHeader;
 import networking.headers.WriteHeader;
+import server.Channel;
+import server.Server;
 
-import java.net.DatagramPacket;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class WriteWorker implements Runnable {
     WriteHeader writeHeader;
-    InetAddress address;
-    int port;
+    InetSocketAddress address;
 
-    public WriteWorker(WriteHeader writeHeader, InetAddress address, int port) {
+    public WriteWorker(WriteHeader writeHeader, InetSocketAddress address) {
         this.writeHeader = writeHeader;
         this.address = address;
-        this.port = port;
     }
 
     public void run() {
-//        DatagramPacket packet = new DatagramPacket();
-        writeHeader.getMsg();
-
+        Channel channel = Server.getChannel(writeHeader.getChannelID());
+        if (channel != null) {
+            if (channel.users.get(writeHeader.getUsername()).getMuted()) return;
+            synchronized (channel.lock) {
+                writeHeader.setMsgID(channel.getAndIncrementMsgID());
+            }
+            channel.addToTreeMap(writeHeader.getMsgID(), writeHeader);
+            channel.sendPacket(writeHeader);
+        } else {
+            ErrorHeader header = new ErrorHeader((byte)0x02,"No such channel exists");
+            PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
+            packetSender.run();
+        }
     }
 }
