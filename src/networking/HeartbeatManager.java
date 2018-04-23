@@ -1,78 +1,51 @@
 package networking;
 
 import java.net.InetSocketAddress;
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.PriorityQueue;
-import java.util.TreeSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Optional;
 
 public class HeartbeatManager {
 
-  public static int HEARTBEAT_MAX = 20;
+  private final HashMap<Long, HeartbeatReceiver> receivers = new HashMap<>();
 
-  private class Client implements Comparable<Client> {
-    public InetSocketAddress address;
-    private Instant receivedAt;
-
-    public Client(InetSocketAddress address, Instant receivedAt) {
-      this.address = address; this.receivedAt = receivedAt;
-    }
-
-    @Override
-    public int compareTo(Client o) {
-      if (receivedAt.isBefore(o.receivedAt)) return -11;
-      else return 1;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj instanceof Client) {
-        Client c = (Client) obj;
-        return  this.address.getPort() == c.address.getPort()
-                && this.address.getAddress().equals(c.address.getAddress());
-      }
-      return false;
-    }
-
-    public Instant getReceivedAt() {
-      return receivedAt;
-    }
-
-    public void setReceivedAt(Instant receivedAt) {
-      this.receivedAt = receivedAt;
-    }
-  }
-
-
-  private final HashSet<InetSocketAddress> clients = new HashSet<>();
-  private final TreeSet<Client> leastRecentHeartbeat = new TreeSet<>();
+  public HeartbeatManager() { }
 
   /**
-   * Check the priority queue to see if there are any clients who haven't send a heartbeat
-   * within HEARTBEAT_MAX seconds. If there are, remove all of them!
-   *
-   * This should be called at least every couple of seconds
+   * Should be called as frequently as you would like dead clients to be dropped.
    */
   public void update() {
-    Client c;
-    // Remove all invalid clients.
-    for (;;) {
-      c = leastRecentHeartbeat.first();
-      if (c != null && c.receivedAt.getEpochSecond() > HEARTBEAT_MAX) {
-        c = leastRecentHeartbeat.pollFirst();
-        clients.remove(c.address);
-      }
+    for (HeartbeatReceiver hr : this.receivers.values()) hr.update();
+  }
+
+  /**
+   * Removes all HeartBeat receivers that are empty
+   */
+  public void clean() {
+    ArrayList<Long> toRemove = new ArrayList<>();
+    receivers.forEach((key, value) -> { if (value.getClients().size() == 0) toRemove.add(key); });
+    for (Long removeMe : toRemove) receivers.remove(removeMe);
+  }
+
+  public void processHeartbeat(long channelID, InetSocketAddress address) {
+    this.receivers.putIfAbsent(channelID, new HeartbeatReceiver());
+    this.receivers.get(channelID).processHeartbeat(address);
+  }
+
+  public void removeClient(long channelID, InetSocketAddress address) {
+    HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
+    if (heartbeatReceiver != null) {
+      heartbeatReceiver.removeClient(address);
     }
   }
 
-  public void processHeartbeat(InetSocketAddress socketAddress) {
-    Client c = new Client(socketAddress, Instant.now());
-    leastRecentHeartbeat.remove(c);
-    leastRecentHeartbeat.add(c);
-    clients.add(socketAddress);
+  public Optional<ArrayList<InetSocketAddress>> getActiveClients(long channelID) {
+    HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
+    if (heartbeatReceiver != null) {
+      return Optional.of(new ArrayList<InetSocketAddress>(heartbeatReceiver.getClients()));
+    } else {
+      return Optional.empty();
+    }
   }
 
-  public HashSet<InetSocketAddress> getClients() {
-    return clients;
-  }
 }

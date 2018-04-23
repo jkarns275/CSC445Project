@@ -1,9 +1,9 @@
 package networking;
 
+import common.Constants;
 import networking.headers.Header;
 
 import java.net.InetSocketAddress;
-import java.time.Instant;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,8 @@ public class AckHandler implements AckJob {
   /**
    * Timeout time in seconds.
    */
-  private final static int timeout = 4;
+  private final static long timeout = 4 * Constants.SECONDS_TO_NANOS;
+  private final static long sleepTime = 1_000_00;
 
   // A set of addresses that the server is still waiting for acks from.
   private final InetSocketAddress waitingFor;
@@ -55,16 +56,16 @@ public class AckHandler implements AckJob {
   }
 
   public void run() {
-    Instant beginning = Instant.now();
+    long beginning = System.nanoTime();
     try {
       while (ackQueue.isEmpty()) {
-        Thread.sleep(4);
-        if (beginning.getEpochSecond() > timeout) {
+        Thread.sleep(0, (int) sleepTime);
+        if (System.nanoTime() - beginning > timeout) {
           resultQueue.put(new AckHandlerResult(false, this.packet, this.waitingFor, this.socket));
           return;
         }
       }
-      InetSocketAddress item = ackQueue.poll(timeout, TimeUnit.SECONDS);
+      InetSocketAddress item = ackQueue.poll(timeout, TimeUnit.NANOSECONDS);
       boolean isEqual =   item.getAddress().equals(this.waitingFor.getAddress())
                           && item.getPort() == this.waitingFor.getPort();
       resultQueue.put(new AckHandlerResult(true, packet, this.waitingFor, this.socket));

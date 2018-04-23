@@ -10,8 +10,8 @@ import java.util.concurrent.*;
 
 import static networking.SocketManager.job;
 
-public class NetworkingTests {
-  public static void main(String[] args) {
+public class SimpleTest {
+  public static void main(String[] args) throws InterruptedException {
     ThreadPoolExecutor poolExecutor = (ThreadPoolExecutor) new ThreadPoolExecutor(2, 2, 60, TimeUnit.SECONDS,
       new LinkedBlockingQueue<>());
 
@@ -26,13 +26,15 @@ public class NetworkingTests {
             SocketRequest sr = hiom.recv();
             if (sr != null) {
               System.out.println("received header with opcode: " + sr.getHeader().opcode());
-              return;
+              break;
             }
           } catch (Exception e) {
             System.err.println("Timed out.");
             e.printStackTrace();
           }
         }
+
+        hiom.shutdownNow();
       } catch (Exception e) {
         System.err.println("Encountered error in test:");
         e.printStackTrace();
@@ -47,17 +49,23 @@ public class NetworkingTests {
             SocketRequest sr = hiom.recv();
             if (sr != null) {
               System.out.println("received header with opcode: " + sr.getHeader().opcode());
-              return;
+              break;
             }
           } catch (Exception e) {
             System.err.println("Timed out.");
             e.printStackTrace();
           }
-      }
+        }
+
+        hiom.shutdownNow();
       } catch (Exception e) {
         System.err.println("Encountered error in test:");
         e.printStackTrace();
       }
     });
+
+    poolExecutor.shutdown();
+    poolExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+    poolExecutor.shutdownNow();
   }
 }

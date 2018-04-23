@@ -2,7 +2,7 @@ package networking.headers;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import static networking.headers.Constants.*;
+import static common.Constants.*;
 
 public class HeaderFactory {
   private static final HeaderFactory instance = new HeaderFactory();

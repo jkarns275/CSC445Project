@@ -1,5 +1,6 @@
 package networking;
 
+import common.Constants;
 import networking.headers.Header;
 
 import java.net.InetSocketAddress;
@@ -38,7 +39,7 @@ public class MulticastAckHandler implements AckJob {
   /**
    * Timeout time in seconds.
    */
-  private final static int timeout = 2;
+  private final static long timeout = 2 * Constants.SECONDS_TO_NANOS;
 
   // A set of addresses that the server is still waiting for acks from.
   private final HashSet<InetSocketAddress> waitingForAck = new HashSet<InetSocketAddress>();
@@ -59,7 +60,7 @@ public class MulticastAckHandler implements AckJob {
   public void run() {
     try {
       for (;;) {
-        InetSocketAddress item = this.ackQueue.poll(MulticastAckHandler.timeout, TimeUnit.SECONDS);
+        InetSocketAddress item = this.ackQueue.poll(MulticastAckHandler.timeout, TimeUnit.NANOSECONDS);
         this.waitingForAck.remove(item);
         if (this.waitingForAck.isEmpty()) {
           resultQueue.put(new MultiAckHandlerResult(this.waitingForAck, this.packet, this.socket));
