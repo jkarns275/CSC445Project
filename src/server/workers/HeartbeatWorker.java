@@ -1,4 +1,4 @@
-package server.Workers;
+package server.workers;
 
 import networking.headers.HeartbeatHeader;
 

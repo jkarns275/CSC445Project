@@ -4,7 +4,7 @@ import networking.HeaderIOManager;
 import networking.HeartbeatManager;
 import networking.SocketRequest;
 import networking.headers.*;
-import server.Workers.*;
+import server.workers.*;
 
 import java.io.IOException;
 import java.net.*;
