@@ -12,7 +12,7 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
-import static common.Constants.OP_ACK;
+import static common.Constants.*;
 
 public class Server {
     public static final int port = 2703;
@@ -92,35 +92,35 @@ public class Server {
                     }
 
                     switch (header.opcode()) {
-                        case Constants.OP_WRITE:
+                        case OP_WRITE:
                             executorPool.execute(new WriteWorker((WriteHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_JOIN:
+                        case OP_JOIN:
                             executorPool.execute(new JoinWorker((JoinHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_LEAVE:
+                        case OP_LEAVE:
                             executorPool.execute(new LeaveWorker((LeaveHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_NAK:
+                        case OP_NAK:
                             executorPool.execute(new NakWorker((NakHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_ERROR:
+                        case OP_ERROR:
                             executorPool.execute(new ErrorWorker((ErrorHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_HEARTBEAT:
+                        case OP_HEARTBEAT:
                             executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_COMMAND:
+                        case OP_COMMAND:
                             executorPool.execute(new CommandWorker((CommandHeader) header, srcAddr));
                             break;
 
-                        case Constants.OP_CONG:
+                        case OP_CONG:
                             executorPool.execute(new ConglomerateWorker((ConglomerateHeader) header, srcAddr));
                             break;
 

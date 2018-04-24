@@ -14,8 +14,6 @@ public class Channel {
     public long channelID;
     private long msgID = 0;
 
-    public final Object lock = new Object();
-
     public String channelName;
 
     public HashMap<String, User> users = new HashMap<>();
@@ -33,7 +31,7 @@ public class Channel {
     /*
      *
      */
-    public String addUser(User user) {
+    public synchronized String addUser(User user) {
         String tmpName = null;
         String number;
         int userNumber = 0;
@@ -68,7 +66,7 @@ public class Channel {
     /*
      *
      */
-    public void removeUser(User user) {
+    public synchronized void removeUser(User user) {
         users.remove(user.username);
     }
 
