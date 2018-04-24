@@ -1,5 +1,6 @@
 package server.workers;
 
+import networking.headers.ErrorHeader;
 import networking.headers.Header;
 import networking.headers.NakHeader;
 import server.Channel;
@@ -21,8 +22,13 @@ public class NakWorker implements Runnable {
         long upperMsg = header.getUpperMsgID();
         long lowerMsg = header.getLowerMsgID();
         for (long i = lowerMsg; ((upperMsg - i) > 0); i++) {
-            Header message = channel.getFromTreeMap(i);
-            channel.sendPacket(message,address);
+            Header bufferedHeader = channel.getFromTreeMap(i);
+            if (bufferedHeader != null) {
+                channel.sendPacket(bufferedHeader,address);
+            } else {
+                ErrorHeader errorHeader = new ErrorHeader((byte)0x04, "Message no longer buffered");
+                channel.sendPacket(errorHeader,address);
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Channel {
+    final int MAX_BUFFERED_MESSAGES = 100;
     public long channelID;
     private long msgID = 0;
 
@@ -22,7 +23,7 @@ public class Channel {
     /*
      * TreeMap buffering messages sent from the server to clients in the given channel.
      */
-    private TreeMap<Long,Header> treeMap = new TreeMap<>();
+    private TreeMap<Long,Header> bufferedMessages = new TreeMap<>();
 
     public Channel(String channelName, long id) {
         this.channelName = channelName;
@@ -86,24 +87,31 @@ public class Channel {
         packetSender.run();
     }
 
-    public long getAndIncrementMsgID() {
+    public synchronized long getAndIncrementMsgID() {
         long tmp = msgID;
         ++msgID;
         return tmp;
     }
 
-    public synchronized void addToTreeMap(Long msgID, Header header) {
-        this.treeMap.put(msgID,header);
-        if (treeMap.keySet().size() > 100) {
-
+    public void update() {
+        if (bufferedMessages.keySet().size() > MAX_BUFFERED_MESSAGES) {
+            for (long index : bufferedMessages.keySet()) {
+                if (index < msgID - MAX_BUFFERED_MESSAGES) {
+                    bufferedMessages.remove(index);
+                }
+            }
         }
     }
 
+    public synchronized void addToTreeMap(Long msgID, Header header) {
+        this.bufferedMessages.put(msgID,header);
+    }
+
     public synchronized void removeFromTreeMap(Long msgID) {
-        this.treeMap.remove(msgID);
+        this.bufferedMessages.remove(msgID);
     }
 
     public synchronized Header getFromTreeMap(Long msgID) {
-        return this.treeMap.get(msgID);
+        return this.bufferedMessages.get(msgID);
     }
 }

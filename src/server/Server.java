@@ -1,5 +1,6 @@
 package server;
 
+import common.Constants;
 import networking.HeaderIOManager;
 import networking.HeartbeatManager;
 import networking.SocketRequest;
@@ -11,10 +12,12 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
+import static common.Constants.OP_ACK;
+
 public class Server {
     public static final int port = 2703;
-    private final int MAX_THREADS = 10;
-    private final int MAX_POOL_SIZE = 15;
+    private final int MAX_THREADS = 15;
+    private final int MAX_POOL_SIZE = 20;
     private final int KEEP_ALIVE_TIME = 100;
 
     public static HashMap<Long, Channel> channels = new HashMap<>();
@@ -23,10 +26,7 @@ public class Server {
     private ThreadPoolExecutor executorPool = new ThreadPoolExecutor(MAX_THREADS,MAX_POOL_SIZE,KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>(1024));
 
     public static HeaderIOManager headerManager;
-
     public static HeartbeatManager heartbeatManager;
-
-    DatagramPacket packet;
 
     private static Server instance = null;
     static {
@@ -76,47 +76,64 @@ public class Server {
     /*
      *
      */
-    public void listen() throws IOException, InterruptedException {
+    public void listen() {
         while (true) {
-            SocketRequest request = headerManager.recv();
-            Header header = request.getHeader();
-            switch (header.opcode()) {
-                case 0x00:
-                    executorPool.execute(new WriteWorker((WriteHeader) header,
-                            new InetSocketAddress(packet.getAddress(), packet.getPort())));
-                    break;
+            try {
+                headerManager.update();
+                heartbeatManager.update();
+                for (Channel channel : channels.values()) channel.update();
+                SocketRequest receive;
+                while ((receive = headerManager.recv()) != null) {
+                    Header header = receive.getHeader();
+                    InetSocketAddress srcAddr = receive.getAddress();
 
-                case 0x01:
-                    executorPool.execute(new JoinWorker((JoinHeader) header,
-                            new InetSocketAddress(packet.getAddress(),packet.getPort())));
-                    break;
+                    if (!users.containsKey(srcAddr) && header.opcode() != Constants.OP_JOIN) {
+                        continue;
+                    }
 
-                case 0x02:
-                    executorPool.execute(new LeaveWorker((LeaveHeader) header,
-                            new InetSocketAddress(packet.getAddress(),packet.getPort())));
-                    break;
+                    switch (header.opcode()) {
+                        case Constants.OP_WRITE:
+                            executorPool.execute(new WriteWorker((WriteHeader) header, srcAddr));
+                            break;
 
-                case 0x04:
-                    executorPool.execute(new NakWorker((NakHeader) header,
-                            new InetSocketAddress(packet.getAddress(),packet.getPort())));
-                    break;
+                        case Constants.OP_JOIN:
+                            executorPool.execute(new JoinWorker((JoinHeader) header, srcAddr));
+                            break;
 
-                case 0x05:
-                    executorPool.execute(new ErrorWorker((ErrorHeader) header));
-                    break;
+                        case Constants.OP_LEAVE:
+                            executorPool.execute(new LeaveWorker((LeaveHeader) header, srcAddr));
+                            break;
 
-                case 0x06:
-                    executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header));
-                    break;
+                        case Constants.OP_NAK:
+                            executorPool.execute(new NakWorker((NakHeader) header, srcAddr));
+                            break;
 
-                case 0x08:
-                    executorPool.execute(new CommandWorker((CommandHeader) header));
-                    break;
+                        case Constants.OP_ERROR:
+                            executorPool.execute(new ErrorWorker((ErrorHeader) header, srcAddr));
+                            break;
 
-                case 0x0FF:
-                    executorPool.execute(new ConglomerateWorker((ConglomerateHeader) header));
-                    break;
+                        case Constants.OP_HEARTBEAT:
+                            executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header, srcAddr));
+                            break;
 
+                        case Constants.OP_COMMAND:
+                            executorPool.execute(new CommandWorker((CommandHeader) header, srcAddr));
+                            break;
+
+                        case Constants.OP_CONG:
+                            executorPool.execute(new ConglomerateWorker((ConglomerateHeader) header, srcAddr));
+                            break;
+
+                        case OP_ACK:
+                            headerManager.processAckHeader((AckHeader) header, srcAddr);
+                            break;
+
+                        default:
+                            System.err.println("Received erroneous opcode, " + header.opcode() + ", from: " + srcAddr);
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

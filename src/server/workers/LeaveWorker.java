@@ -1,6 +1,5 @@
 package server.workers;
 
-import networking.PacketSender;
 import networking.headers.ErrorHeader;
 import networking.headers.LeaveHeader;
 import server.Channel;
@@ -27,7 +26,6 @@ public class LeaveWorker implements Runnable {
             }
         }
         ErrorHeader header = new ErrorHeader((byte)0x00,"Connection closed");
-        PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
-        packetSender.run();
+        channel.sendPacket(header,address);
     }
 }

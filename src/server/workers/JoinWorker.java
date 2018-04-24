@@ -7,7 +7,6 @@ import server.Channel;
 import server.Server;
 import server.User;
 
-import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 
 public class JoinWorker implements Runnable {
@@ -38,13 +37,5 @@ public class JoinWorker implements Runnable {
                 break;
             }
         }
-//        String assignedUsername = Server.channels.get(joinHeader).addUser(user);
-//        if (!server.users.containsKey(user.address)) {
-//            server.users.put(address, user);
-//        }
-//        SourceHeader sourceHeader = new SourceHeader(Server.channels.get(joinHeader.getChannelName()).channelID,
-//                joinHeader.getChannelName(), assignedUsername);
-//        PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(sourceHeader,address);
-//        packetSender.run();
     }
 }
