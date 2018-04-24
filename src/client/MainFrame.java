@@ -91,12 +91,20 @@ public class MainFrame extends JFrame {
                         if (channel.isPresent()) {
                             addChannel(channel.get());
                         } else {
-                            printToMesssageChannel("ERROR", "Joining channel failed.");
+                            printToMesssageChannel("ERROR",
+                                    "Joining channel " + substrings[1] + " failed.");
                         }
                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                         e.printStackTrace();
-                        printToMesssageChannel("ERROR", "Joining channel failed.");
+                        printToMesssageChannel("ERROR",
+                                "Joining channel " + substrings[1] + " failed.");
                     }
+                    break;
+                case "/leave":
+                    ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
+                    client.sendLeaveHeader(channel.getChannelID());
+                    client.removeChannelHeartbeat(channel.getChannelID());
+                    channels.remove(channel);
                     break;
                 case "/op":
                     break;

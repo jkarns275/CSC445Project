@@ -95,7 +95,7 @@ public class Client implements Runnable {
 
   }
 
-  public void sendJoinHeader(String channelName, String desiredUsername) throws InterruptedException {
+  public void sendJoinHeader(String channelName, String desiredUsername) {
     hio.send(hio.packetSender(new JoinHeader(desiredUsername, channelName), server));
   }
 
@@ -105,7 +105,7 @@ public class Client implements Runnable {
     this.heartbeatSender.addChannel(channelID);
   }
 
-  public void removeChannelHeartbeat(long channelID) throws InterruptedException {
+  public void removeChannelHeartbeat(long channelID) {
     this.heartbeatSender.removeChannel(channelID);
   }
 
