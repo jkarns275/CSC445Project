@@ -5,17 +5,21 @@ import java.awt.*;
 
 public class ChannelPanel extends JPanel {
 
-    private String channelName;
+    private final long id;
+    private final String channelName;
+    private final String nick;
     private JTextArea chatArea;
-    private String nick;
     //private JTextArea onlineUsers;
 
     /**
      * Constuctor for ChannelPanel class.
+     * @param id identifier of this channel
      * @param channelName Name of the channel this will represent
+     * @param nick User's assigned nick in this channel
      */
-    public ChannelPanel(String channelName, String nick) {
+    public ChannelPanel(long id, String channelName, String nick) {
         super();
+        this.id = id;
         this.nick = nick;
         this.channelName = channelName;
         this.setLayout(new BorderLayout());
@@ -38,6 +42,14 @@ public class ChannelPanel extends JPanel {
     }
 
     /**
+     * Get identifier of this channel.
+     * @return channel id
+     */
+    public long getChannelID() {
+        return this.id;
+    }
+
+    /**
      * Get name of the channel this panel represents.
      * @return Channel Name
      */
@@ -45,6 +57,10 @@ public class ChannelPanel extends JPanel {
         return this.channelName;
     }
 
+    /**
+     * Get user's nick on this channel.
+     * @return User nick
+     */
     public String getNick() {
         return this.nick;
     }

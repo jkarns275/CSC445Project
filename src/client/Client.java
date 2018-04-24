@@ -1,5 +1,6 @@
 package client;
 
+import client.reps.ClientChannel;
 import common.Constants;
 import networking.*;
 import networking.headers.*;
@@ -11,7 +12,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
-
 
 public class Client implements Runnable {
 
@@ -25,6 +25,10 @@ public class Client implements Runnable {
   private final SocketManager socket;
   private final InetSocketAddress server;
   private final HeartbeatManager heartbeatManager;
+  private final int timeout = 5000;
+
+  private boolean sourceReceived = false;
+  private Header prevHeader;
 
   public Client(InetSocketAddress server, int port) throws IOException {
     this.port = port; this.server = server;
@@ -64,7 +68,11 @@ public class Client implements Runnable {
             case OP_WRITE:      break;
             case OP_JOIN:       break;
             case OP_LEAVE:      break;
-            case OP_SOURCE:     break;
+            case OP_SOURCE:
+                prevHeader =  header;
+                sourceReceived = true;
+                notifyAll();
+                break;
             case OP_NAK:        break;
             case OP_ERROR:      break;
             case OP_HEARTBEAT:
@@ -105,4 +113,23 @@ public class Client implements Runnable {
     Optional<ArrayList<InetSocketAddress>> result = heartbeatManager.getActiveClients(Constants.CLIENT_HEARTBEAT_CHANNEL);
     return result.isPresent() && result.get().size() > 0;
   }
+
+  public synchronized Optional<ClientChannel> joinChannel(String channelName, String nick) {
+      try {
+          sendJoinHeader(channelName, nick);
+          wait(timeout);
+          if (!sourceReceived) {
+              return Optional.empty();
+          }
+          sourceReceived = false;
+          SourceHeader header = (SourceHeader) prevHeader;
+          ClientChannel channel = new ClientChannel(header.getChannelID(),
+                  header.getChannelName(), header.getAssignedUsername());
+          return Optional.of(channel);
+      } catch (InterruptedException e) {
+          e.printStackTrace();
+          return Optional.empty();
+      }
+  }
+
 }

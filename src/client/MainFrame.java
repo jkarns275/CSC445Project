@@ -1,9 +1,15 @@
 package client;
 
+import client.workers.JoinSwingWorker;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MainFrame extends JFrame {
 
@@ -15,7 +21,7 @@ public class MainFrame extends JFrame {
     /**
      * Constructor for MainFrame class.
      */
-    public MainFrame(String nick) {
+    public MainFrame() {
         super();
         this.getContentPane().setLayout(new BorderLayout());
         initWidgets();
@@ -32,7 +38,7 @@ public class MainFrame extends JFrame {
         channels = new JTabbedPane();
         this.add(channels, BorderLayout.CENTER);
 
-        messagePanel = new ChannelPanel("*MSG*", "");
+        messagePanel = new ChannelPanel(-1, "*MSG*", "");
         channels.addTab(messagePanel.getChannelName(), messagePanel);
 
         input = new JTextField();
@@ -47,6 +53,7 @@ public class MainFrame extends JFrame {
     private boolean connect(String hostname, int port) {
         try {
             this.client = new Client(new InetSocketAddress(hostname, port), port);
+            new Thread(client).start();
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -70,7 +77,7 @@ public class MainFrame extends JFrame {
             switch(substrings[0]) {
                 case "/connect":
                     if (!connect(substrings[1], Integer.valueOf(substrings[2]))) {
-                        printToMesssageChannel("","Connect to server failed.");
+                        printToMesssageChannel("ERROR","Connect to server failed.");
                     }
                     break;
                 case "/me":
@@ -78,12 +85,17 @@ public class MainFrame extends JFrame {
                 case "/whois":
                     break;
                 case "/join":
+                    JoinSwingWorker joinWorker = new JoinSwingWorker(client, substrings[1], substrings[2]);
                     try {
-                        client.sendJoinHeader(substrings[1], substrings[2]);
-                        joinChannel(substrings[1], substrings[2]);
-                    } catch (InterruptedException e) {
-                        printToMesssageChannel("", "Joining channel failed.");
+                        Optional<ChannelPanel> channel = joinWorker.get(2, TimeUnit.SECONDS);
+                        if (channel.isPresent()) {
+                            addChannel(channel.get());
+                        } else {
+                            printToMesssageChannel("ERROR", "Joining channel failed.");
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
                         e.printStackTrace();
+                        printToMesssageChannel("ERROR", "Joining channel failed.");
                     }
                     break;
                 case "/op":
@@ -100,22 +112,19 @@ public class MainFrame extends JFrame {
 
     /**
      * Add and display a channel to the client gui.
-     * @param channelName Name of the channel
+     * @param panel ChannelPanel representing some channel
      */
-    public void joinChannel(String channelName, String nick) {
+    public void addChannel(ChannelPanel panel) {
         SwingUtilities.invokeLater(() -> {
-            ChannelPanel channel = new ChannelPanel(channelName, nick);
-            channels.addTab(channelName, channel);
-            channels.setSelectedComponent(channel);
+            channels.addTab(panel.getChannelName(), panel);
+            channels.setSelectedComponent(panel);
         });
     }
 
     // for testing
     public static void main(String[] args) {
-        final String nick = "bb";
         SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame(nick);
-            frame.joinChannel("#java", nick);
+            MainFrame frame = new MainFrame();
         });
     }
 
