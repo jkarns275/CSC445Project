@@ -1,28 +1,32 @@
 package server;
 
+import common.Constants;
+import networking.HeaderIOManager;
+import networking.HeartbeatManager;
+import networking.SocketRequest;
 import networking.headers.*;
-import server.workers.JoinWorker;
-import server.workers.LeaveWorker;
+import server.workers.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+
+import static common.Constants.*;
 
 public class Server {
-    DatagramSocket serverSocket;
-    DatagramPacket packet;
-    byte[] message;
-    public HashMap<String, Channel> channels = new HashMap<String, Channel>();
-    public HashMap<InetAddress, User> users = new HashMap<InetAddress, User>();
-    HeaderFactory headerFactory = HeaderFactory.getInstance();
-    ExecutorService executor = Executors.newFixedThreadPool(10);
+    public static final int port = 2703;
+    private final int MAX_THREADS = 15;
+    private final int MAX_POOL_SIZE = 20;
+    private final int KEEP_ALIVE_TIME = 100;
+
+    public static HashMap<Long, Channel> channels = new HashMap<>();
+    public HashMap<InetSocketAddress, User> users = new HashMap<>();
+
+    private ThreadPoolExecutor executorPool = new ThreadPoolExecutor(MAX_THREADS,MAX_POOL_SIZE,KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>(1024));
+
+    public static HeaderIOManager headerManager;
+    public static HeartbeatManager heartbeatManager;
 
     private static Server instance = null;
     static {
@@ -30,50 +34,106 @@ public class Server {
             instance = new Server();
         } catch (SocketException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    private Server() throws SocketException {
-        serverSocket = new DatagramSocket(2703);
+    private Server() throws IOException {
+        this.init();
+        headerManager = new HeaderIOManager(new InetSocketAddress(port),15);
+        heartbeatManager = new HeartbeatManager();
     }
 
     public static Server getInstance() { return instance; }
 
-    public static void main(String[] args) throws IOException {
-        getInstance().listen();
+    /*
+     *
+     */
+    public static void main(String[] args) throws IOException, InterruptedException {
+        Server server = new Server();
+        server.listen();
     }
 
-    public void listen() throws IOException {
+    /*
+     *
+     */
+    private void init() {
+        String[] names = {"Channel1","Channel2","Channel3"};
+        long[] ids = {31415, 8314, 27345};
+        for (int i = 0; i < names.length; i++) {
+            channels.put(ids[i],new Channel(names[i],ids[i]));
+        }
+    }
+
+    public static Channel getChannel(Long channelID) {
+        if (channels.containsKey(channelID)) {
+            return channels.get(channelID);
+        }
+        return null;
+    }
+
+    /*
+     *
+     */
+    public void listen() {
         while (true) {
-            message = new byte[2048];
-            packet = new DatagramPacket(message, message.length);
-            serverSocket.receive(packet);
-            ByteArrayInputStream bis = new ByteArrayInputStream(packet.getData());
-            ObjectInputStream objectInputStream = new ObjectInputStream(bis);
-            Header header = headerFactory.readHeader(objectInputStream);
+            try {
+                headerManager.update();
+                heartbeatManager.update();
+                for (Channel channel : channels.values()) channel.update();
+                SocketRequest receive;
+                while ((receive = headerManager.recv()) != null) {
+                    Header header = receive.getHeader();
+                    InetSocketAddress srcAddr = receive.getAddress();
 
-            if (header instanceof JoinHeader) {
-                JoinWorker joinWorker = new JoinWorker((JoinHeader) header, packet.getAddress());
-                executor.execute(joinWorker);
-            } else if (header instanceof WriteHeader) {
+                    if (!users.containsKey(srcAddr) && header.opcode() != Constants.OP_JOIN) {
+                        continue;
+                    }
 
-            } else if (header instanceof LeaveHeader) {
-                LeaveWorker leaveWorker = new LeaveWorker((LeaveHeader) header);
-                executor.execute(leaveWorker);
-            } else if (header instanceof NakHeader) {
+                    switch (header.opcode()) {
+                        case OP_WRITE:
+                            executorPool.execute(new WriteWorker((WriteHeader) header, srcAddr));
+                            break;
 
-            } else if (header instanceof CommandHeader) {
+                        case OP_JOIN:
+                            executorPool.execute(new JoinWorker((JoinHeader) header, srcAddr));
+                            break;
 
-            } else if (header instanceof ConglomerateHeader) {
+                        case OP_LEAVE:
+                            executorPool.execute(new LeaveWorker((LeaveHeader) header, srcAddr));
+                            break;
 
-            } else if (header instanceof ErrorHeader) {
+                        case OP_NAK:
+                            executorPool.execute(new NakWorker((NakHeader) header, srcAddr));
+                            break;
 
-            } else if (header instanceof HeartbeatHeader) {
+                        case OP_ERROR:
+                            executorPool.execute(new ErrorWorker((ErrorHeader) header, srcAddr));
+                            break;
 
-            } else if (header instanceof InfoHeader) {
+                        case OP_HEARTBEAT:
+                            executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header, srcAddr));
+                            break;
 
-            } else {
-                //error: not a viable header
+                        case OP_COMMAND:
+                            executorPool.execute(new CommandWorker((CommandHeader) header, srcAddr));
+                            break;
+
+                        case OP_CONG:
+                            executorPool.execute(new ConglomerateWorker((ConglomerateHeader) header, srcAddr));
+                            break;
+
+                        case OP_ACK:
+                            headerManager.processAckHeader((AckHeader) header, srcAddr);
+                            break;
+
+                        default:
+                            System.err.println("Received erroneous opcode, " + header.opcode() + ", from: " + srcAddr);
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

@@ -9,6 +9,7 @@ import java.util.Objects;
 
 public class CommandHeader extends Header {
   private long channelID;
+  private long msgID;
   private String command;
 
   public CommandHeader(long channelID, String command) {
@@ -21,6 +22,7 @@ public class CommandHeader extends Header {
   public void writeObject(ObjectOutputStream out) throws IOException {
     out.writeByte(Constants.OP_COMMAND);
     out.writeLong(channelID);
+    out.writeLong(msgID);
     out.writeShort(command.length());
     out.writeBytes(command);
   }
@@ -28,7 +30,7 @@ public class CommandHeader extends Header {
   @Override
   public void readObject(ObjectInputStream in) throws IOException {
     this.channelID = in.readLong();
-
+    this.msgID = in.readLong();
     final int commandLen = (int) in.readByte();
     final byte[] p = new byte[commandLen];
     if (in.read(p) != commandLen) throw new IOException("Prematurely encountered end of input stream.");
@@ -52,4 +54,6 @@ public class CommandHeader extends Header {
 
   public String getCommand() { return this.command; }
   public long getChannelID() { return this.channelID; }
+  public void setMsgID(long msgID) { this.msgID = msgID; }
+  public long getMsgID() { return this.msgID; }
 }
