@@ -1,6 +1,7 @@
 package client;
 
 import client.workers.JoinSwingWorker;
+import client.workers.WriteSwingWorker;
 
 import javax.swing.*;
 import java.awt.*;
@@ -114,7 +115,19 @@ public class MainFrame extends JFrame {
         } else {
             // write packet
             ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
-            channel.addMessage(channel.getNick(), input);
+            WriteSwingWorker writeWorker = new WriteSwingWorker(client,
+                    channel.getChannelID(), channel.getNick(), input);
+            try {
+                Optional<Long> messageID = writeWorker.get(2, TimeUnit.SECONDS);
+                if (messageID.isPresent()) {
+                    channel.addMessage(messageID.get(), channel.getNick(), input);
+                } else {
+                    printToMesssageChannel("ERROR",
+                            "Failed to send message on channel " + channel.getChannelName());
+                }
+            } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                e.printStackTrace();
+            }
         }
     }
 

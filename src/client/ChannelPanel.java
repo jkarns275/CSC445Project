@@ -1,7 +1,10 @@
 package client;
 
+import common.Tuple;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class ChannelPanel extends JPanel {
 
@@ -9,6 +12,7 @@ public class ChannelPanel extends JPanel {
     private final String channelName;
     private final String nick;
     private JTextArea chatArea;
+    private ArrayList<Tuple<String, String>> messages;
     //private JTextArea onlineUsers;
 
     /**
@@ -19,6 +23,7 @@ public class ChannelPanel extends JPanel {
      */
     public ChannelPanel(long id, String channelName, String nick) {
         super();
+        this.messages = new ArrayList<>();
         this.id = id;
         this.nick = nick;
         this.channelName = channelName;
@@ -39,6 +44,13 @@ public class ChannelPanel extends JPanel {
         onlineUsers.setEditable(false);
         this.add(onlineUsers, BorderLayout.EAST);
         */
+    }
+
+    private void updateDisplay() {
+        for (Tuple<String, String> msg : messages) {
+            SwingUtilities.invokeLater(() -> chatArea.setText(chatArea.getText() +
+                    String.format("%19s| %s%n", msg.getValue1(), msg.getValue2())));
+        }
     }
 
     /**
@@ -67,12 +79,19 @@ public class ChannelPanel extends JPanel {
 
     /**
      * Add a message to be displayed on this channel.
+     * @param id Identifier signifying ordering of this message
      * @param name Name of user who sent this message
      * @param message Content of the message
      */
-    public void addMessage(String name, String message) {
-        SwingUtilities.invokeLater(() ->
-                chatArea.setText(chatArea.getText() + String.format("%19s| %s%n", name, message)));
+    public void addMessage(long id, String name, String message) {
+        messages.set((int)id, new Tuple<>(name, message));
+        updateDisplay();
+    }
+
+    // for printing messages to message channel
+    void addMessage(String name, String message) {
+        messages.add(new Tuple<>(name, message));
+        updateDisplay();
     }
 
     /*

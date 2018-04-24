@@ -28,6 +28,8 @@ public class Client implements Runnable {
   private final int timeout = 5000;
 
   private boolean sourceReceived = false;
+  private boolean writeReceived = false;
+  private String awaitNick = null;
   private Header prevHeader;
 
   public Client(InetSocketAddress server, int port) throws IOException {
@@ -65,7 +67,17 @@ public class Client implements Runnable {
 
           // TODO: Create handlers for the remaining headers
           switch (header.opcode()) {
-            case OP_WRITE:      break;
+            case OP_WRITE:
+              WriteHeader writeHeader = (WriteHeader) header;
+              // check if write response
+              if (writeHeader.getUsername().equals(awaitNick)) {
+                prevHeader = header;
+                writeReceived = true;
+                notifyAll();
+                break;
+              }
+              // TODO: handle message
+              break;
             case OP_JOIN:       break;
             case OP_LEAVE:      break;
             case OP_SOURCE:
@@ -93,6 +105,10 @@ public class Client implements Runnable {
         e.printStackTrace();
       }
 
+  }
+
+  public void sendWriteHeader(long channelID, long messageID, String nick, String message) {
+    hio.send(hio.packetSender(new WriteHeader(channelID, messageID, message, nick), server));
   }
 
   public void sendJoinHeader(String channelName, String desiredUsername) {
@@ -130,6 +146,24 @@ public class Client implements Runnable {
           e.printStackTrace();
           return Optional.empty();
       }
+  }
+
+  public synchronized Optional<Long> sendMessage(long channelID, long messageID, String nick, String message) {
+    try {
+      sendWriteHeader(channelID, messageID, nick, message);
+      awaitNick = nick;
+      wait(timeout);
+      if (!writeReceived) {
+        return Optional.empty();
+      }
+      writeReceived = false;
+      awaitNick = null;
+      WriteHeader header = (WriteHeader) prevHeader;
+      return Optional.of(header.getMsgID());
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      return Optional.empty();
+    }
   }
 
 }
