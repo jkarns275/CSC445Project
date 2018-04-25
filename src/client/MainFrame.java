@@ -66,6 +66,24 @@ public class MainFrame extends JFrame {
         messagePanel.addMessage(sender, message);
     }
 
+    private void sendMessage(String input) {
+        // write packet
+        ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
+        WriteSwingWorker writeWorker = new WriteSwingWorker(client,
+                channel.getChannelID(), channel.getNick(), input);
+        try {
+            Optional<Long> messageID = writeWorker.get(2, TimeUnit.SECONDS);
+            if (messageID.isPresent()) {
+                channel.addMessage(messageID.get(), channel.getNick(), input);
+            } else {
+                printToMesssageChannel("ERROR",
+                        "Failed to send message on channel " + channel.getChannelName());
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Direct message or command inputted by the user to the correct function for sending.
      * @param input String input from user
@@ -82,6 +100,8 @@ public class MainFrame extends JFrame {
                     }
                     break;
                 case "/me":
+                    ChannelPanel currentChannel = (ChannelPanel) channels.getSelectedComponent();
+                    sendMessage(currentChannel.getNick() + " " + substrings[1]);
                     break;
                 case "/whois":
                     break;
@@ -113,21 +133,7 @@ public class MainFrame extends JFrame {
                     // not a command
             }
         } else {
-            // write packet
-            ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
-            WriteSwingWorker writeWorker = new WriteSwingWorker(client,
-                    channel.getChannelID(), channel.getNick(), input);
-            try {
-                Optional<Long> messageID = writeWorker.get(2, TimeUnit.SECONDS);
-                if (messageID.isPresent()) {
-                    channel.addMessage(messageID.get(), channel.getNick(), input);
-                } else {
-                    printToMesssageChannel("ERROR",
-                            "Failed to send message on channel " + channel.getChannelName());
-                }
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                e.printStackTrace();
-            }
+            sendMessage(input);
         }
     }
 
