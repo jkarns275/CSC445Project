@@ -126,6 +126,14 @@ public class Client implements Runnable {
 
   public void sendLeaveHeader(long channelID) { hio.send(hio.packetSender(new LeaveHeader(channelID), server)); }
 
+  public void sendErrorHeader(byte errorCode, String errorMessage) {
+    hio.send(hio.packetSender(new ErrorHeader(errorCode, errorMessage), server));
+  }
+
+  public void sendNAKHeader(long channelID, long lower, long upper) {
+    hio.send(hio.packetSender(new NakHeader(lower, upper, channelID), server));
+  }
+
   public void addChannelHeartbeat(long channelID) throws InterruptedException {
     this.heartbeatSender.addChannel(channelID);
   }

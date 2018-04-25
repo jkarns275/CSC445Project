@@ -153,8 +153,15 @@ public class MainFrame extends JFrame {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
             if (channel.getChannelID() == channelID) {
                 channel.addMessage(messageID, nick, message);
+                long[] missing = channel.validateOrdering();
+                if (missing.length > 0) {
+                    // send nak
+                    client.sendNAKHeader(missing[0], missing[1], channel.getChannelID());
+                }
             }
         }
+        // no such channel
+        client.sendErrorHeader((byte) 2, "No Such Channel");
     }
 
 }

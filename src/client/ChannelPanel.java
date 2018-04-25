@@ -1,10 +1,12 @@
 package client;
 
-import common.Tuple;
+import client.reps.Message;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ChannelPanel extends JPanel {
 
@@ -12,7 +14,7 @@ public class ChannelPanel extends JPanel {
     private final String channelName;
     private final String nick;
     private JTextArea chatArea;
-    private ArrayList<Tuple<String, String>> messages;
+    private SortedSet<Message> messages;
     //private JTextArea onlineUsers;
 
     /**
@@ -23,7 +25,7 @@ public class ChannelPanel extends JPanel {
      */
     public ChannelPanel(long id, String channelName, String nick) {
         super();
-        this.messages = new ArrayList<>();
+        this.messages = Collections.synchronizedSortedSet(new TreeSet<>());
         this.id = id;
         this.nick = nick;
         this.channelName = channelName;
@@ -47,9 +49,9 @@ public class ChannelPanel extends JPanel {
     }
 
     private void updateDisplay() {
-        for (Tuple<String, String> msg : messages) {
+        for (Message msg : messages) {
             SwingUtilities.invokeLater(() -> chatArea.setText(chatArea.getText() +
-                    String.format("%19s| %s%n", msg.getValue1(), msg.getValue2())));
+                    String.format("%19s| %s%n", msg.getNick(), msg.getContent())));
         }
     }
 
@@ -84,13 +86,24 @@ public class ChannelPanel extends JPanel {
      * @param message Content of the message
      */
     public void addMessage(long id, String name, String message) {
-        messages.set((int)id, new Tuple<>(name, message));
+        messages.add(new Message(id, name, message));
         updateDisplay();
+    }
+
+    public long[] validateOrdering() {
+        long prev = messages.first().getId()-1;
+        for (Message message : messages) {
+            if (prev+1 != message.getId()) {
+                long[] result = {prev+1, message.getId()};
+                return result;
+            }
+        }
+        return new long[0];
     }
 
     // for printing messages to message channel
     void addMessage(String name, String message) {
-        messages.add(new Tuple<>(name, message));
+        messages.add(new Message(name, message));
         updateDisplay();
     }
 
