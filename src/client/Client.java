@@ -107,6 +107,10 @@ public class Client implements Runnable {
 
   }
 
+  public void sendCommandHeader(long channelID, String command) {
+    hio.send(hio.packetSender(new CommandHeader(channelID, command), server));
+  }
+
   public void sendWriteHeader(long channelID, long messageID, String nick, String message) {
     hio.send(hio.packetSender(new WriteHeader(channelID, messageID, message, nick), server));
   }

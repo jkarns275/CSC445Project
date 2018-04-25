@@ -93,6 +93,7 @@ public class MainFrame extends JFrame {
         if (input.regionMatches(0, "/", 0, 1)) {
             // command packet
             String[] substrings = input.split(" ");
+            ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
             switch(substrings[0]) {
                 case "/connect":
                     if (!connect(substrings[1], Integer.valueOf(substrings[2]))) {
@@ -100,17 +101,16 @@ public class MainFrame extends JFrame {
                     }
                     break;
                 case "/me":
-                    ChannelPanel currentChannel = (ChannelPanel) channels.getSelectedComponent();
-                    sendMessage(currentChannel.getNick() + " " + substrings[1]);
+                    sendMessage(channel.getNick() + " " + substrings[1]);
                     break;
                 case "/whois":
                     break;
                 case "/join":
                     JoinSwingWorker joinWorker = new JoinSwingWorker(client, substrings[1], substrings[2]);
                     try {
-                        Optional<ChannelPanel> channel = joinWorker.get(2, TimeUnit.SECONDS);
-                        if (channel.isPresent()) {
-                            addChannel(channel.get());
+                        Optional<ChannelPanel> newChannel = joinWorker.get(2, TimeUnit.SECONDS);
+                        if (newChannel.isPresent()) {
+                            addChannel(newChannel.get());
                         } else {
                             printToMesssageChannel("ERROR",
                                     "Joining channel " + substrings[1] + " failed.");
@@ -122,12 +122,12 @@ public class MainFrame extends JFrame {
                     }
                     break;
                 case "/leave":
-                    ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
                     client.sendLeaveHeader(channel.getChannelID());
                     client.removeChannelHeartbeat(channel.getChannelID());
                     channels.remove(channel);
                     break;
                 case "/op":
+                    client.sendCommandHeader(channel.getChannelID(), input.substring(4));
                     break;
                 default:
                     // not a command
