@@ -11,11 +11,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Client implements Runnable {
 
-  private static final long CLIENT_PARALLELISM = 4;
+  private static final int CLIENT_PARALLELISM = 4;
   private static final long HEARTBEAT_MANAGER_CLEAN_DELAY = 20 * Constants.SECONDS_TO_NANOS;
 
   private final int port;
@@ -25,6 +27,7 @@ public class Client implements Runnable {
   private final SocketManager socket;
   private final InetSocketAddress server;
   private final HeartbeatManager heartbeatManager;
+  private final ExecutorService pool = Executors.newFixedThreadPool(CLIENT_PARALLELISM);
   private final int timeout = 5000;
 
   private boolean sourceReceived = false;
@@ -74,9 +77,11 @@ public class Client implements Runnable {
                 prevHeader = header;
                 writeReceived = true;
                 notifyAll();
-                break;
+              } else {
+                  // message from another user
+                  pool.submit(() -> GUI.writeMessage(writeHeader.getChannelID(), writeHeader.getMsgID(),
+                          writeHeader.getUsername(), writeHeader.getMsg()));
               }
-              // TODO: handle message
               break;
             case OP_JOIN:       break;
             case OP_LEAVE:      break;

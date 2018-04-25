@@ -141,18 +141,20 @@ public class MainFrame extends JFrame {
      * Add and display a channel to the client gui.
      * @param panel ChannelPanel representing some channel
      */
-    public void addChannel(ChannelPanel panel) {
+    private void addChannel(ChannelPanel panel) {
         SwingUtilities.invokeLater(() -> {
             channels.addTab(panel.getChannelName(), panel);
             channels.setSelectedComponent(panel);
         });
     }
 
-    // for testing
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame();
-        });
+    public void addMessageToChannel(long channelID, long messageID, String nick, String message) {
+        for (int i = 0; i < channels.getTabCount(); i++) {
+            ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
+            if (channel.getChannelID() == channelID) {
+                channel.addMessage(messageID, nick, message);
+            }
+        }
     }
 
 }
