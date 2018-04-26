@@ -1,6 +1,7 @@
 package client;
 
 import client.workers.JoinSwingWorker;
+import client.workers.LeaveSwingWorker;
 import client.workers.WriteSwingWorker;
 
 import javax.swing.*;
@@ -122,9 +123,17 @@ public class MainFrame extends JFrame {
                     }
                     break;
                 case "/leave":
-                    client.sendLeaveHeader(channel.getChannelID());
-                    client.removeChannelHeartbeat(channel.getChannelID());
-                    channels.remove(channel);
+                    LeaveSwingWorker leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
+                    try {
+                        boolean leaveSuccess = leaveWorker.get(2, TimeUnit.SECONDS);
+                        if (leaveSuccess) {
+                            channels.remove(channel);
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                        this.printToMesssageChannel("SERVER",
+                                "Failed to leave channel " + channel.getChannelName());
+                    }
                     break;
                 case "/op":
                     client.sendCommandHeader(channel.getChannelID(), input.substring(4));

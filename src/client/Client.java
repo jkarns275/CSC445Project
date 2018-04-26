@@ -32,6 +32,7 @@ public class Client implements Runnable {
 
   private boolean sourceReceived = false;
   private boolean writeReceived = false;
+  private boolean leaveSuccess = false;
   private String awaitNick = null;
   private Header prevHeader;
 
@@ -98,8 +99,15 @@ public class Client implements Runnable {
               break;
             case OP_INFO:
                 InfoHeader infoHeader = (InfoHeader) header;
-                pool.submit(() -> GUI.writeInfo(infoHeader.getChannelID(),
-                        infoHeader.getMessageID(), infoHeader.getMessage()));
+                if (infoHeader.getInfoCode() == 4) {
+                    // connection closed confirmation
+                    leaveSuccess = true;
+                    notifyAll();
+                } else {
+                    // channel info
+                    pool.submit(() -> GUI.writeInfo(infoHeader.getChannelID(),
+                            infoHeader.getMessageID(), infoHeader.getMessage()));
+                }
                 break;
             case OP_COMMAND:    break;
             case OP_CONG:       break;
@@ -166,6 +174,21 @@ public class Client implements Runnable {
       } catch (InterruptedException e) {
           e.printStackTrace();
           return Optional.empty();
+      }
+  }
+
+  public synchronized boolean leaveChannel(long channelID) {
+      try {
+          sendLeaveHeader(channelID);
+          wait(timeout);
+          if (!leaveSuccess) {
+              return false;
+          }
+          leaveSuccess = false;
+          return true;
+      } catch (InterruptedException e) {
+          e.printStackTrace();
+          return false;
       }
   }
 
