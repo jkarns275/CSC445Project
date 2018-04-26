@@ -16,7 +16,11 @@ public class GUI {
         getInstance().addMessageToChannel(channelID, messageID, nick, message);
     }
 
-    // for testing
+    public static void writeInfo(long channelID, long messageID, String message) {
+        final String infoNick = "SERVER";
+        getInstance().addMessageToChannel(channelID, messageID, infoNick, message);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GUI::getInstance);
     }

@@ -96,7 +96,11 @@ public class Client implements Runnable {
               HeartbeatHeader heartbeatHeader = (HeartbeatHeader) header;
               this.heartbeatManager.processHeartbeat(heartbeatHeader.getChannelID(), srcAddr);
               break;
-            case OP_INFO:       break;
+            case OP_INFO:
+                InfoHeader infoHeader = (InfoHeader) header;
+                pool.submit(() -> GUI.writeInfo(infoHeader.getChannelID(),
+                        infoHeader.getMessageID(), infoHeader.getMessage()));
+                break;
             case OP_COMMAND:    break;
             case OP_CONG:       break;
             case OP_ACK:
