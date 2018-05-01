@@ -49,6 +49,7 @@ public class Client implements Runnable {
     long last = System.nanoTime();
     for (;;)
       try {
+        System.out.println(",");
         this.hio.update();
         this.heartbeatSender.update();
         this.heartbeatManager.update();

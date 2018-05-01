@@ -9,13 +9,14 @@ import server.workers.*;
 
 import java.io.IOException;
 import java.net.*;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
 import static common.Constants.*;
 
 public class Server {
-    public static final int port = 2703;
+    public static int port = 2703;
     private final int MAX_THREADS = 15;
     private final int MAX_POOL_SIZE = 20;
     private final int KEEP_ALIVE_TIME = 100;
@@ -29,19 +30,19 @@ public class Server {
     public static HeartbeatManager heartbeatManager;
 
     private static Server instance = null;
+
+    /*
     static {
         try {
             instance = new Server();
-        } catch (SocketException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     private Server() throws IOException {
         this.init();
-        headerManager = new HeaderIOManager(new InetSocketAddress(port),15);
+        headerManager = new HeaderIOManager(new InetSocketAddress(port),4);
         heartbeatManager = new HeartbeatManager();
     }
 
@@ -51,7 +52,17 @@ public class Server {
      *
      */
     public static void main(String[] args) throws IOException, InterruptedException {
-        Server server = new Server();
+      if (args.length == 0) {
+        System.out.println("No port number supplied, using 2703.");
+      } else {
+        try {
+          port = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+          System.out.println("Supplied port number was not a valid integer, using 2703 instead.");
+          port = 2703;
+        }
+      }
+      Server server = new Server();
         server.listen();
     }
 
@@ -60,7 +71,7 @@ public class Server {
      */
     private void init() {
         String[] names = {"Channel1","Channel2","Channel3"};
-        long[] ids = {31415, 8314, 27345};
+        long[] ids = { 31415, 8314, 27345 };
         for (int i = 0; i < names.length; i++) {
             channels.put(ids[i],new Channel(names[i],ids[i]));
         }
@@ -79,11 +90,13 @@ public class Server {
     public void listen() {
         while (true) {
             try {
+                System.out.print(",");
                 headerManager.update();
                 heartbeatManager.update();
                 for (Channel channel : channels.values()) channel.update();
                 SocketRequest receive;
                 while ((receive = headerManager.recv()) != null) {
+                    System.out.println("Received " + receive.getHeader() + " from " + receive.getAddress());
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
 

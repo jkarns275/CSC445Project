@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MainFrame extends JFrame {
+    private static final String HELP_STRING = "This should have a list of commands";
 
     private JTabbedPane channels;
     private ChannelPanel messagePanel;
@@ -52,9 +53,9 @@ public class MainFrame extends JFrame {
         this.add(input, BorderLayout.SOUTH);
     }
 
-    private boolean connect(String hostname, int port) {
+    private boolean connect(String hostname, int hostport, int clientport) {
         try {
-            this.client = new Client(new InetSocketAddress(hostname, port), port);
+            this.client = new Client(new InetSocketAddress(hostname, hostport), clientport);
             new Thread(client).start();
             return true;
         } catch (IOException e) {
@@ -97,7 +98,7 @@ public class MainFrame extends JFrame {
             ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
             switch(substrings[0]) {
                 case "/connect":
-                    if (!connect(substrings[1], Integer.valueOf(substrings[2]))) {
+                    if (!connect(substrings[1], Integer.valueOf(substrings[2]), Integer.valueOf(substrings[3]))) {
                         printToMesssageChannel("ERROR","Connect to server failed.");
                     }
                     break;
@@ -139,6 +140,7 @@ public class MainFrame extends JFrame {
                     client.sendCommandHeader(channel.getChannelID(), input.substring(4));
                     break;
                 default:
+                  printToMesssageChannel("HELP", HELP_STRING);
                     // not a command
             }
         } else {
