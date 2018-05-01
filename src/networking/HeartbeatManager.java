@@ -18,7 +18,7 @@ public class HeartbeatManager {
     for (HeartbeatReceiver hr : this.receivers.values()) hr.update();
   }
 
-  /**
+  /*
    * Removes all HeartBeat receivers that are empty
    */
   public void clean() {

@@ -3,25 +3,27 @@ package server;
 import common.Constants;
 import networking.HeaderIOManager;
 import networking.HeartbeatManager;
+import networking.PacketSender;
 import networking.SocketRequest;
 import networking.headers.*;
 import server.workers.*;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.*;
 
 import static common.Constants.*;
 
 public class Server {
-    public static final int port = 2703;
     private final int MAX_THREADS = 15;
     private final int MAX_POOL_SIZE = 20;
     private final int KEEP_ALIVE_TIME = 100;
 
     public static HashMap<Long, Channel> channels = new HashMap<>();
-    public HashMap<InetSocketAddress, User> users = new HashMap<>();
+    public static ArrayList<InetSocketAddress> users = new ArrayList<>();
 
     private ThreadPoolExecutor executorPool = new ThreadPoolExecutor(MAX_THREADS,MAX_POOL_SIZE,KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>(1024));
 
@@ -31,7 +33,7 @@ public class Server {
     private static Server instance = null;
     static {
         try {
-            instance = new Server();
+            instance = new Server(2703);
         } catch (SocketException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -39,7 +41,7 @@ public class Server {
         }
     }
 
-    private Server() throws IOException {
+    private Server(int port) throws IOException {
         this.init();
         headerManager = new HeaderIOManager(new InetSocketAddress(port),15);
         heartbeatManager = new HeartbeatManager();
@@ -50,8 +52,8 @@ public class Server {
     /*
      *
      */
-    public static void main(String[] args) throws IOException, InterruptedException {
-        Server server = new Server();
+    public static void main(String[] args) {
+        Server server = Server.getInstance();
         server.listen();
     }
 
@@ -60,7 +62,7 @@ public class Server {
      */
     private void init() {
         String[] names = {"Channel1","Channel2","Channel3"};
-        long[] ids = {31415, 8314, 27345};
+        long[] ids = {1, 2, 3};
         for (int i = 0; i < names.length; i++) {
             channels.put(ids[i],new Channel(names[i],ids[i]));
         }
@@ -73,6 +75,27 @@ public class Server {
         return null;
     }
 
+    public static synchronized boolean addChannel(Channel channel) {
+        if (!channels.containsValue(channel)) {
+            channels.put(channel.channelID,channel);
+            return true;
+        }
+        return false;
+    }
+
+    public static synchronized boolean addUser(User user) {
+        if (!users.contains(user.address)) {
+            users.add(user.address);
+            return true;
+        }
+        return false;
+    }
+
+    public static void sendPacket(Header header, InetSocketAddress address) {
+        PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
+        packetSender.run();
+    }
+
     /*
      *
      */
@@ -81,13 +104,14 @@ public class Server {
             try {
                 headerManager.update();
                 heartbeatManager.update();
+                heartbeatManager.clean();
                 for (Channel channel : channels.values()) channel.update();
                 SocketRequest receive;
                 while ((receive = headerManager.recv()) != null) {
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
 
-                    if (!users.containsKey(srcAddr) && header.opcode() != Constants.OP_JOIN) {
+                    if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
                         continue;
                     }
 
@@ -130,9 +154,13 @@ public class Server {
 
                         default:
                             System.err.println("Received erroneous opcode, " + header.opcode() + ", from: " + srcAddr);
+                            ErrorHeader errorHeader = new ErrorHeader((byte)0x01,"Invalid opcode");
+                            executorPool.execute(new ErrorWorker(errorHeader, srcAddr));
                     }
                 }
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
         }

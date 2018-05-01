@@ -22,7 +22,7 @@ public class NakWorker implements Runnable {
         long upperMsg = header.getUpperMsgID();
         long lowerMsg = header.getLowerMsgID();
         for (long i = lowerMsg; ((upperMsg - i) > 0); i++) {
-            Header bufferedHeader = channel.getFromTreeMap(i);
+            Header bufferedHeader = channel.getFromTreeMap(i).getHeader();
             if (bufferedHeader != null) {
                 channel.sendPacket(bufferedHeader,address);
             } else {
