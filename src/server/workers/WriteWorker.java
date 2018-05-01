@@ -21,13 +21,6 @@ public class WriteWorker implements Runnable {
     public void run() {
         Channel channel = Server.getChannel(writeHeader.getChannelID());
         if (channel != null) {
-            for (User u : channel.users.values()) System.out.println(u.username);
-            System.out.println(writeHeader.getUsername());
-            System.out.println(channel.users.get(writeHeader.getUsername()).username);
-            System.out.println(writeHeader.getUsername().equals("Ben"));
-
-
-
             if (channel.users.get(writeHeader.getUsername()).getMuted()) return;
             writeHeader.setMsgID(channel.getAndIncrementMsgID());
             channel.addToTreeMap(writeHeader.getMsgID(), writeHeader);

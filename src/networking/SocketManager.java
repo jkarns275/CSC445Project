@@ -69,7 +69,6 @@ public class SocketManager {
           for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
           final DatagramPacket received = new DatagramPacket(buffer, buffer.length);
           socket.receive(received);
-
           final ByteInputStream bin = new ByteInputStream(received.getData(), received.getLength());
           final ObjectInputStream in = new ObjectInputStream(bin);
           final Header header = HeaderFactory.getInstance().readHeader(in);

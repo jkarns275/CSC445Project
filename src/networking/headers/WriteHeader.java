@@ -43,7 +43,7 @@ public class WriteHeader extends Header {
     this.msg = new String(p);
 
     int usernameLen = (int) in.readByte();
-    p = new byte[msgLen];
+    p = new byte[usernameLen];
     if (in.read(p) != usernameLen) throw new IOException("Prematurely encountered end of input stream.");
     this.username = new String(p);
   }
