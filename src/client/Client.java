@@ -38,7 +38,7 @@ public class Client implements Runnable {
 
   public Client(InetSocketAddress server, int port) throws IOException {
     this.port = port; this.server = server;
-    this.hio = new HeaderIOManager(new InetSocketAddress(InetAddress.getLocalHost(), port), 4);
+    this.hio = new HeaderIOManager(new InetSocketAddress(InetAddress.getLocalHost(), port), 8);
     this.socket = this.hio.getSocket();
     this.heartbeatSender = new HeartbeatSender(this.socket, server);
     this.heartbeatManager = new HeartbeatManager();
@@ -49,7 +49,6 @@ public class Client implements Runnable {
     long last = System.nanoTime();
     for (;;)
       try {
-        System.out.println(",");
         this.hio.update();
         this.heartbeatSender.update();
         this.heartbeatManager.update();
@@ -134,6 +133,7 @@ public class Client implements Runnable {
   }
 
   public void sendJoinHeader(String channelName, String desiredUsername) {
+    System.out.println("SENDING");
     hio.send(hio.packetSender(new JoinHeader(desiredUsername, channelName), server));
   }
 

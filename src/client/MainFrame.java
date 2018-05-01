@@ -109,6 +109,7 @@ public class MainFrame extends JFrame {
                     break;
                 case "/join":
                     JoinSwingWorker joinWorker = new JoinSwingWorker(client, substrings[1], substrings[2]);
+                    joinWorker.execute();
                     try {
                         Optional<ChannelPanel> newChannel = joinWorker.get(2, TimeUnit.SECONDS);
                         if (newChannel.isPresent()) {
