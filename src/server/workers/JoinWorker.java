@@ -31,7 +31,12 @@ public class JoinWorker implements Runnable {
             if (channel.channelName.equals(joinHeader.getChannelName())) {
                 channelExists = true;
                 String assignedUsername = channel.addUser(user);
-                if (!server.users.contains(address)) {
+                if (assignedUsername == null) {
+                    ErrorHeader header = new ErrorHeader((byte)0x04,"Failed join - user already in channel");
+                    Server.sendPacket(header,address);
+                    return;
+                }
+                if (!Server.users.contains(address)) {
                     Server.addUser(user);
                 }
                 SourceHeader sourceHeader = new SourceHeader(channel.channelID, channel.channelName, assignedUsername);
@@ -55,7 +60,7 @@ public class JoinWorker implements Runnable {
                 SourceHeader sourceHeader = new SourceHeader(newChannel.channelID, newChannel.channelName, assignedUsername);
                 Server.sendPacket(sourceHeader,address);
             } else {
-                ErrorHeader header = new ErrorHeader((byte)0x03,"Failed create - channel exists");
+                ErrorHeader header = new ErrorHeader((byte)0x03, "Failed create - channel exists");
                 Server.sendPacket(header,address);
             }
         }

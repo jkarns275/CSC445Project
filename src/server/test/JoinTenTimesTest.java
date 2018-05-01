@@ -16,6 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 import static common.Constants.OP_SOURCE;
 
+/*
+ * This test is outdated. It was written under the assumption that a user could join a single channel multiple times.
+ * The test was supposed to test the naming logic of the channel addUser method.
+ */
 public class JoinTenTimesTest {
     public static InetSocketAddress serverAddress = new InetSocketAddress("localhost",2703);
     private ThreadPoolExecutor executorPool = new ThreadPoolExecutor(2,2,1000, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>(1024));
