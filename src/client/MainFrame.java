@@ -1,6 +1,8 @@
 package client;
 
 import client.workers.JoinSwingWorker;
+import client.workers.LeaveSwingWorker;
+import client.workers.WriteSwingWorker;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MainFrame extends JFrame {
+    private static final String HELP_STRING = "This should have a list of commands";
 
     private JTabbedPane channels;
     private ChannelPanel messagePanel;
@@ -50,9 +53,9 @@ public class MainFrame extends JFrame {
         this.add(input, BorderLayout.SOUTH);
     }
 
-    private boolean connect(String hostname, int port) {
+    private boolean connect(String hostname, int hostport, int clientport) {
         try {
-            this.client = new Client(new InetSocketAddress(hostname, port), port);
+            this.client = new Client(new InetSocketAddress(hostname, hostport), clientport);
             new Thread(client).start();
             return true;
         } catch (IOException e) {
@@ -65,6 +68,24 @@ public class MainFrame extends JFrame {
         messagePanel.addMessage(sender, message);
     }
 
+    private void sendMessage(String input) {
+        // write packet
+        ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
+        WriteSwingWorker writeWorker = new WriteSwingWorker(client,
+                channel.getChannelID(), channel.getNick(), input);
+        try {
+            Optional<Long> messageID = writeWorker.get(2, TimeUnit.SECONDS);
+            if (messageID.isPresent()) {
+                channel.addMessage(messageID.get(), channel.getNick(), input);
+            } else {
+                printToMesssageChannel("ERROR",
+                        "Failed to send message on channel " + channel.getChannelName());
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Direct message or command inputted by the user to the correct function for sending.
      * @param input String input from user
@@ -74,39 +95,56 @@ public class MainFrame extends JFrame {
         if (input.regionMatches(0, "/", 0, 1)) {
             // command packet
             String[] substrings = input.split(" ");
+            ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
             switch(substrings[0]) {
                 case "/connect":
-                    if (!connect(substrings[1], Integer.valueOf(substrings[2]))) {
+                    if (!connect(substrings[1], Integer.valueOf(substrings[2]), Integer.valueOf(substrings[3]))) {
                         printToMesssageChannel("ERROR","Connect to server failed.");
                     }
                     break;
                 case "/me":
+                    sendMessage(channel.getNick() + " " + substrings[1]);
                     break;
                 case "/whois":
                     break;
                 case "/join":
                     JoinSwingWorker joinWorker = new JoinSwingWorker(client, substrings[1], substrings[2]);
                     try {
-                        Optional<ChannelPanel> channel = joinWorker.get(2, TimeUnit.SECONDS);
-                        if (channel.isPresent()) {
-                            addChannel(channel.get());
+                        Optional<ChannelPanel> newChannel = joinWorker.get(2, TimeUnit.SECONDS);
+                        if (newChannel.isPresent()) {
+                            addChannel(newChannel.get());
                         } else {
-                            printToMesssageChannel("ERROR", "Joining channel failed.");
+                            printToMesssageChannel("ERROR",
+                                    "Joining channel " + substrings[1] + " failed.");
                         }
                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                         e.printStackTrace();
-                        printToMesssageChannel("ERROR", "Joining channel failed.");
+                        printToMesssageChannel("ERROR",
+                                "Joining channel " + substrings[1] + " failed.");
+                    }
+                    break;
+                case "/leave":
+                    LeaveSwingWorker leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
+                    try {
+                        boolean leaveSuccess = leaveWorker.get(2, TimeUnit.SECONDS);
+                        if (leaveSuccess) {
+                            channels.remove(channel);
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                        this.printToMesssageChannel("SERVER",
+                                "Failed to leave channel " + channel.getChannelName());
                     }
                     break;
                 case "/op":
+                    client.sendCommandHeader(channel.getChannelID(), input.substring(4));
                     break;
                 default:
+                  printToMesssageChannel("HELP", HELP_STRING);
                     // not a command
             }
         } else {
-            // write packet
-            ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
-            channel.addMessage(channel.getNick(), input);
+            sendMessage(input);
         }
     }
 
@@ -114,18 +152,27 @@ public class MainFrame extends JFrame {
      * Add and display a channel to the client gui.
      * @param panel ChannelPanel representing some channel
      */
-    public void addChannel(ChannelPanel panel) {
+    private void addChannel(ChannelPanel panel) {
         SwingUtilities.invokeLater(() -> {
             channels.addTab(panel.getChannelName(), panel);
             channels.setSelectedComponent(panel);
         });
     }
 
-    // for testing
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            MainFrame frame = new MainFrame();
-        });
+    public void addMessageToChannel(long channelID, long messageID, String nick, String message) {
+        for (int i = 0; i < channels.getTabCount(); i++) {
+            ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
+            if (channel.getChannelID() == channelID) {
+                channel.addMessage(messageID, nick, message);
+                long[] missing = channel.validateOrdering();
+                if (missing.length > 0) {
+                    // send nak
+                    client.sendNAKHeader(missing[0], missing[1], channel.getChannelID());
+                }
+            }
+        }
+        // no such channel
+        client.sendErrorHeader((byte) 2, "No Such Channel");
     }
 
 }
