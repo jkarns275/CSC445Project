@@ -9,9 +9,11 @@ import java.util.Objects;
 
 public class ErrorHeader extends Header {
 
-  public static final byte ERROR_CONNECTION_CLOSED  = 0x00;
-  public static final byte ERROR_INVALID_UNICODE    = 0x01;
-  public static final byte ERROR_NO_SUCH_CHANNEL    = 0x02;
+  public static final byte ERROR_CONNECTION_CLOSED     = 0x00;
+  public static final byte ERROR_INVALID_UNICODE       = 0x01;
+  public static final byte ERROR_NO_SUCH_CHANNEL       = 0x02;
+  public static final byte ERROR_FAILED_CHANNEL_CREATE = 0x03;
+  public static final byte ERROR_FAILED_CHANNEL_JOIN   = 0x04;
 
   private byte errorCode;
   private String errorMsg;

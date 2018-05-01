@@ -38,6 +38,11 @@ public class Channel {
      *
      */
     public synchronized String addUser(User user) {
+        for (User u : users.values()) {
+            if (u.address.getAddress().equals(user.address.getAddress())) {
+                return null;
+            }
+        }
         String assignedUsername = user.username;
         Integer number = 0;
         while(usernames.contains(assignedUsername)) {
@@ -46,6 +51,8 @@ public class Channel {
         }
         user.username = assignedUsername;
         users.put(assignedUsername,user);
+        System.out.println("Added user!");
+        System.out.println(users.get(assignedUsername).username);
         usernames.add(assignedUsername);
         return user.username;
     }
@@ -89,7 +96,7 @@ public class Channel {
             }
             Collections.sort(toPrint);
             for (BufferedMessageEntry entry : toPrint) {
-                pw.println("[" + entry.militime + "] " + entry.header);
+                pw.println("[" + entry.militime + "] " + entry.header.toString());
             }
             pw.close();
         }

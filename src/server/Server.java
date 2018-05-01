@@ -76,11 +76,13 @@ public class Server {
     }
 
     public static synchronized boolean addChannel(Channel channel) {
-        if (!channels.containsValue(channel)) {
-            channels.put(channel.channelID,channel);
-            return true;
+        for (Channel chan : channels.values()) {
+            if (chan.channelName.equals(channel.channelName)) {
+                return false;
+            }
         }
-        return false;
+        channels.put(channel.channelID,channel);
+        return true;
     }
 
     public static synchronized boolean addUser(User user) {
