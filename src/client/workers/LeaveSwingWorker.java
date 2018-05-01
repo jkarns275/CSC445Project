@@ -15,7 +15,7 @@ public class LeaveSwingWorker extends SwingWorker<Boolean, Void> {
     }
 
     @Override
-    protected Boolean doInBackground() throws Exception {
+    protected Boolean doInBackground() {
         boolean leaveSuccess = client.leaveChannel(channelID);
         if (leaveSuccess) {
             client.removeChannelHeartbeat(channelID);
