@@ -28,7 +28,7 @@ public class Client implements Runnable {
   private final InetSocketAddress server;
   private final HeartbeatManager heartbeatManager;
   private final ExecutorService pool = Executors.newFixedThreadPool(CLIENT_PARALLELISM);
-  private final int timeout = 5000;
+  private final int timeout = 2000;
 
   private boolean sourceReceived = false;
   private boolean writeReceived = false;
@@ -77,7 +77,9 @@ public class Client implements Runnable {
               if (writeHeader.getUsername().equals(awaitNick)) {
                 prevHeader = header;
                 writeReceived = true;
-                notifyAll();
+                synchronized (this) {
+                      notifyAll();
+                }
               } else {
                   // message from another user
                   pool.submit(() -> GUI.writeMessage(writeHeader.getChannelID(), writeHeader.getMsgID(),
@@ -89,7 +91,9 @@ public class Client implements Runnable {
             case OP_SOURCE:
                 prevHeader =  header;
                 sourceReceived = true;
-                notifyAll();
+                synchronized (this) {
+                    notifyAll();
+                }
                 break;
             case OP_NAK:        break;
             case OP_ERROR:      break;
@@ -102,7 +106,9 @@ public class Client implements Runnable {
                 if (infoHeader.getInfoCode() == 4) {
                     // connection closed confirmation
                     leaveSuccess = true;
-                    notifyAll();
+                    synchronized (this) {
+                        notifyAll();
+                    }
                 } else {
                     // channel info
                     pool.submit(() -> GUI.writeInfo(infoHeader.getChannelID(),

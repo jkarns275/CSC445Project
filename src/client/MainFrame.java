@@ -73,6 +73,7 @@ public class MainFrame extends JFrame {
         ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
         WriteSwingWorker writeWorker = new WriteSwingWorker(client,
                 channel.getChannelID(), channel.getNick(), input);
+        writeWorker.execute();
         try {
             Optional<Long> messageID = writeWorker.get(2, TimeUnit.SECONDS);
             if (messageID.isPresent()) {
@@ -126,10 +127,15 @@ public class MainFrame extends JFrame {
                     break;
                 case "/leave":
                     LeaveSwingWorker leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
+                    leaveWorker.execute();
                     try {
                         boolean leaveSuccess = leaveWorker.get(2, TimeUnit.SECONDS);
                         if (leaveSuccess) {
                             channels.remove(channel);
+                        }
+                        else {
+                            this.printToMesssageChannel("SERVER",
+                                    "Failed to leave channel " + channel.getChannelName());
                         }
                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
                         e.printStackTrace();

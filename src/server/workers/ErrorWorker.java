@@ -1,6 +1,8 @@
 package server.workers;
 
+import networking.PacketSender;
 import networking.headers.ErrorHeader;
+import server.Server;
 
 import java.net.InetSocketAddress;
 
@@ -14,6 +16,7 @@ public class ErrorWorker implements Runnable {
     }
 
     public void run() {
-
+        PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header, address);
+        packetSender.run();
     }
 }

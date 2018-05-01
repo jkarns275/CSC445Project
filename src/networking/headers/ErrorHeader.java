@@ -50,4 +50,8 @@ public class ErrorHeader extends Header {
 
   @Override
   public int hashCode() { return this.errorMsg.hashCode() ^ (this.opcode() >> errorCode); }
+
+  public byte getErrorCode() { return errorCode; }
+
+  public String getErrorMsg() { return errorMsg; }
 }
