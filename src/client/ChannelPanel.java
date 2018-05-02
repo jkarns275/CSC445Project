@@ -50,6 +50,7 @@ public class ChannelPanel extends JPanel {
 
     private void updateDisplay() {
         chatArea.setText("");
+        System.out.println(this.messages);
         for (Message msg : messages) {
             SwingUtilities.invokeLater(() -> chatArea.setText(chatArea.getText() +
                     String.format("[%3d] %19s| %s%n", msg.getId(), msg.getNick(), msg.getContent())));
@@ -92,13 +93,16 @@ public class ChannelPanel extends JPanel {
     }
 
     public long[] validateOrdering() {
-        long prev = messages.first().getId()-1;
+        long prev = messages.first().getId() - 1;
         for (Message message : messages) {
-            if (prev+1 != message.getId()) {
-                long[] result = {prev+1, message.getId()};
+            System.out.println("Message ID: " + message.getId());
+
+            if (prev + 1 != message.getId()) {
+                long[] result = { prev+1, message.getId() };
                 return result;
             }
         }
+        System.out.println("");
         return new long[0];
     }
 

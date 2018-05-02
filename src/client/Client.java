@@ -53,6 +53,7 @@ public class Client implements Runnable {
     long last = System.nanoTime();
     for (;;)
       try {
+        System.out.println("Hey");
         this.hio.update();
         this.heartbeatSender.update();
         this.heartbeatManager.update();
@@ -100,9 +101,11 @@ public class Client implements Runnable {
             case OP_SOURCE:
                 prevHeader =  header;
                 sourceReceived = true;
+              System.out.println("Before");
                 synchronized (this) {
                     notifyAll();
                 }
+              System.out.println("After");
                 break;
             case OP_NAK:        break;
             case OP_ERROR:      break;
@@ -143,15 +146,17 @@ public class Client implements Runnable {
     hio.send(hio.packetSender(new CommandHeader(channelID, command), server));
   }
 
-  public void sendWriteHeader(long channelID, long messageID, String nick, String message) {
-    hio.send(hio.packetSender(new WriteHeader(channelID, messageID, message, nick), server));
+  private void sendWriteHeader(long channelID, long messageID, String nick, String message) {
+    WriteHeader writeHeader = new WriteHeader(channelID, messageID, message, nick);
+    this.writeRecvQueue.put(writeHeader.getMagic(), new Tuple<>(System.nanoTime(), writeHeader));
+    hio.send(hio.packetSender(writeHeader, server));
   }
 
-  public void sendJoinHeader(String channelName, String desiredUsername) {
+  private void sendJoinHeader(String channelName, String desiredUsername) {
     hio.send(hio.packetSender(new JoinHeader(desiredUsername, channelName), server));
   }
 
-  public void sendLeaveHeader(long channelID) { hio.send(hio.packetSender(new LeaveHeader(channelID), server)); }
+  private void sendLeaveHeader(long channelID) { hio.send(hio.packetSender(new LeaveHeader(channelID), server)); }
 
   public void sendErrorHeader(byte errorCode, String errorMessage) {
     hio.send(hio.packetSender(new ErrorHeader(errorCode, errorMessage), server));
