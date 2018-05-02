@@ -71,20 +71,7 @@ public class MainFrame extends JFrame {
     private void sendMessage(String input) {
         // write packet
         ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
-        WriteSwingWorker writeWorker = new WriteSwingWorker(client,
-                channel.getChannelID(), channel.getNick(), input);
-        writeWorker.execute();
-        try {
-            Optional<Long> messageID = writeWorker.get(2, TimeUnit.SECONDS);
-            if (messageID.isPresent()) {
-                channel.addMessage(messageID.get(), channel.getNick(), input);
-            } else {
-                printToMesssageChannel("ERROR",
-                        "Failed to send message on channel " + channel.getChannelName());
-            }
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            e.printStackTrace();
-        }
+        client.sendMessage(channel.getChannelID(), -1, channel.getNick(), input);
     }
 
     /**
@@ -146,6 +133,7 @@ public class MainFrame extends JFrame {
                 case "/op":
                     client.sendCommandHeader(channel.getChannelID(), input.substring(4));
                     break;
+                case "/help":
                 default:
                   printToMesssageChannel("HELP", HELP_STRING);
                     // not a command
@@ -176,6 +164,7 @@ public class MainFrame extends JFrame {
                     // send nak
                     client.sendNAKHeader(missing[0], missing[1], channel.getChannelID());
                 }
+                return;
             }
         }
         // no such channel

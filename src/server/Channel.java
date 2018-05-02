@@ -51,8 +51,6 @@ public class Channel {
         }
         user.username = assignedUsername;
         users.put(assignedUsername,user);
-        System.out.println("Added user!");
-        System.out.println(users.get(assignedUsername).username);
         usernames.add(assignedUsername);
         return user.username;
     }

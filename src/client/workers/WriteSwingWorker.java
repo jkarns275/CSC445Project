@@ -5,7 +5,7 @@ import client.Client;
 import javax.swing.*;
 import java.util.Optional;
 
-public class WriteSwingWorker extends SwingWorker<Optional<Long>, Void> {
+public class WriteSwingWorker extends SwingWorker<Void, Void> {
 
     private final Client client;
     private final long channelID;
@@ -20,7 +20,7 @@ public class WriteSwingWorker extends SwingWorker<Optional<Long>, Void> {
     }
 
     @Override
-    protected Optional<Long> doInBackground() throws Exception {
+    protected Void doInBackground() {
         return client.sendMessage(channelID, -1, nick, message);
     }
 

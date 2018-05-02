@@ -30,15 +30,17 @@ public class Server {
     public static HeaderIOManager headerManager;
     public static HeartbeatManager heartbeatManager;
 
-    private static Server instance = null;
+    private final static Server instance;
     static {
-        try {
-            instance = new Server(2703);
-        } catch (SocketException e) {
-            e.printStackTrace();
+      Server instance1;
+      try {
+            instance1 = new Server(2704);
         } catch (IOException e) {
             e.printStackTrace();
+            System.exit(0);
+            instance1 = null;
         }
+      instance = instance1;
     }
 
     private Server(int port) throws IOException {

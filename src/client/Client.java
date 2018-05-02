@@ -2,6 +2,7 @@ package client;
 
 import client.reps.ClientChannel;
 import common.Constants;
+import common.Tuple;
 import networking.*;
 import networking.headers.*;
 import static common.Constants.*;
@@ -9,16 +10,14 @@ import static common.Constants.*;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class Client implements Runnable {
 
   private static final int CLIENT_PARALLELISM = 4;
   private static final long HEARTBEAT_MANAGER_CLEAN_DELAY = 20 * Constants.SECONDS_TO_NANOS;
+  private static final int WRITE_TIMEOUT = 5;
 
   private final int port;
   private final LinkedBlockingQueue<Header> sendQueue = new LinkedBlockingQueue<>();
@@ -30,13 +29,18 @@ public class Client implements Runnable {
   private final ExecutorService pool = Executors.newFixedThreadPool(CLIENT_PARALLELISM);
   private final int timeout = 2000;
 
+  // Maps (Channel ID) -> (Nickname for this client in that channel)
+  private final ConcurrentHashMap<Long, String> channels = new ConcurrentHashMap<>();
+
   private boolean sourceReceived = false;
-  private boolean writeReceived = false;
+  // Maps (write header magic) -> (time sent, corresponding write header)
+  private ConcurrentSkipListMap<Long, Tuple<Long, WriteHeader>> writeRecvQueue = new ConcurrentSkipListMap<>();
   private boolean leaveSuccess = false;
   private String awaitNick = null;
   private Header prevHeader;
 
   public Client(InetSocketAddress server, int port) throws IOException {
+
     this.port = port; this.server = server;
     this.hio = new HeaderIOManager(new InetSocketAddress(InetAddress.getLocalHost(), port), 8);
     this.socket = this.hio.getSocket();
@@ -58,6 +62,8 @@ public class Client implements Runnable {
           last = System.nanoTime();
         }
 
+        updateWriteRecvQueue();
+
         SocketRequest receive;
         while ((receive = this.hio.recv()) != null) {
           Header header = receive.getHeader();
@@ -74,14 +80,17 @@ public class Client implements Runnable {
             case OP_WRITE:
               WriteHeader writeHeader = (WriteHeader) header;
               // check if write response
-              if (writeHeader.getUsername().equals(awaitNick)) {
+              String username = this.channels.get(writeHeader.getMsgID());
+              // If this client has a username for the channel this writeHeader is intended for,
+              // the username the header specifies is the same as ours, and if we are waiting
+              // for a writeHeader with the same magic value.
+              if (username != null && username.equals(writeHeader.getUsername()) &&
+                  this.writeRecvQueue.containsKey(writeHeader.getMagic())) {
                 prevHeader = header;
-                writeReceived = true;
-                synchronized (this) {
-                      notifyAll();
-                }
+                this.writeRecvQueue.remove(writeHeader.getMagic());
               } else {
                   // message from another user
+                  System.out.println("Received message with message ID '" + writeHeader.getMsgID() + "'");
                   pool.submit(() -> GUI.writeMessage(writeHeader.getChannelID(), writeHeader.getMsgID(),
                           writeHeader.getUsername(), writeHeader.getMsg()));
               }
@@ -139,7 +148,6 @@ public class Client implements Runnable {
   }
 
   public void sendJoinHeader(String channelName, String desiredUsername) {
-    System.out.println("SENDING");
     hio.send(hio.packetSender(new JoinHeader(desiredUsername, channelName), server));
   }
 
@@ -199,21 +207,21 @@ public class Client implements Runnable {
       }
   }
 
-  public synchronized Optional<Long> sendMessage(long channelID, long messageID, String nick, String message) {
-    try {
-      sendWriteHeader(channelID, messageID, nick, message);
-      awaitNick = nick;
-      wait(timeout);
-      if (!writeReceived) {
-        return Optional.empty();
+  public synchronized Void sendMessage(long channelID, long messageID, String nick, String message) {
+    sendWriteHeader(channelID, messageID, nick, message);
+    return null;
+  }
+
+  private void updateWriteRecvQueue() {
+    while (!this.writeRecvQueue.isEmpty()) {
+      if (this.writeRecvQueue.firstEntry().getValue().first() > Constants.SECONDS_TO_NANOS * WRITE_TIMEOUT) {
+        Map.Entry<Long, Tuple<Long, WriteHeader>> entry = this.writeRecvQueue.pollFirstEntry();
+        WriteHeader writeHeader = entry.getValue().second();
+        pool.submit(() -> GUI.writeMessage(writeHeader.getChannelID(), writeHeader.getMsgID(),
+                                            "ERROR", "Failed to send message '" + writeHeader.getMsg() + "'"));
+        continue;
       }
-      writeReceived = false;
-      awaitNick = null;
-      WriteHeader header = (WriteHeader) prevHeader;
-      return Optional.of(header.getMsgID());
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      return Optional.empty();
+      break;
     }
   }
 

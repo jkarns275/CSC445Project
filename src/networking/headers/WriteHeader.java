@@ -9,8 +9,13 @@ import java.util.Objects;
 
 public class WriteHeader extends Header {
 
+  private static long staticMagic = (long) (Math.random() * (Long.MAX_VALUE / 2));
+
   private long channelID;
   private long msgID;
+  // magic is used to differentiate between WriteHeaders that have the same message contents and original sender.
+  // It is basically a messageID local to this client.
+  private long magic = staticMagic++;
   private String msg      = "ERROR";
   private String username = "ERROR";
 
@@ -25,6 +30,7 @@ public class WriteHeader extends Header {
     out.writeByte(opcode());
     out.writeLong(this.channelID);
     out.writeLong(this.msgID);
+    out.writeLong(this.magic);
     out.writeChar((char) this.msg.length());
     out.writeBytes(this.msg);
     out.writeByte(this.username.length());
@@ -35,6 +41,7 @@ public class WriteHeader extends Header {
   public final void readObject(ObjectInputStream in) throws IOException {
     this.channelID = in.readLong();
     this.msgID = in.readLong();
+    this.magic = in.readLong();
 
     int msgLen = (int) in.readChar();
     byte[] p = new byte[msgLen];
@@ -66,6 +73,10 @@ public class WriteHeader extends Header {
 
   public void setMsgID(long msgID) {
     this.msgID = msgID;
+  }
+
+  public long getMagic() {
+    return magic;
   }
 
   @Override

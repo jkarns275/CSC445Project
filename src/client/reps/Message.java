@@ -40,4 +40,8 @@ public class Message implements Comparable<Message> {
         }
     }
 
+    @Override
+  public boolean equals(Object o) {
+      return o instanceof Message && ((Message) o).id == this.id;
+    }
 }

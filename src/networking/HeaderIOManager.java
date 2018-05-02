@@ -6,6 +6,7 @@ import networking.headers.Header;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,6 +18,7 @@ public class HeaderIOManager {
   private final LinkedBlockingQueue<AckResult> ackResultQueue = new LinkedBlockingQueue<>(1024);
   private final HashMap<AckHeader, ArrayBlockingQueue<InetSocketAddress>> ackQueues = new HashMap<>();
   private final LinkedBlockingQueue<SendJob> doneQueue = new LinkedBlockingQueue<>(1024);
+  private final InetSocketAddress sa;
 
   public SocketManager getSocket() {
     return socket;
@@ -27,6 +29,7 @@ public class HeaderIOManager {
   public HeaderIOManager(InetSocketAddress address, int parallelism) throws IOException {
     pool = new ThreadPoolExecutor(parallelism, parallelism, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     socket = new SocketManager(address, pool);
+    sa = address;
   }
 
   public SendJob packetSender(Header h, InetSocketAddress to) {
@@ -48,6 +51,7 @@ public class HeaderIOManager {
     // Process all SendJobs that have finished
     try {
       while (!doneQueue.isEmpty()) {
+        System.out.println(doneQueue);
         SendJob finishedJob = doneQueue.poll(0, TimeUnit.MILLISECONDS);
         if (finishedJob.needsAck()) {
           AckHeader header = finishedJob.getAckHeader();
@@ -87,4 +91,8 @@ public class HeaderIOManager {
   public LinkedBlockingQueue<SendJob> getDoneQueue() { return doneQueue; }
 
   public List<Runnable> shutdownNow() throws InterruptedException { this.socket.send(new KillRequest()); return this.pool.shutdownNow(); }
+
+  public InetSocketAddress getSa() {
+    return sa;
+  }
 }
