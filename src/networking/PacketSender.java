@@ -19,12 +19,10 @@ public class PacketSender implements SendJob {
   private final SocketManager socket;
   private final Header packet;
   private boolean needsAck;
+  private AckHeader ackHeader = null;
 
-  private LinkedBlockingQueue<SendJob> doneQueue;
-
-  public PacketSender(boolean needsAck, Header packet, InetSocketAddress to, SocketManager socket,
-                      LinkedBlockingQueue<SendJob> doneQueue) {
-    this.needsAck = needsAck; this.to = to; this.socket = socket; this.packet = packet; this.doneQueue = doneQueue;
+  public PacketSender(boolean needsAck, Header packet, InetSocketAddress to, SocketManager socket) {
+    this.needsAck = needsAck; this.to = to; this.socket = socket; this.packet = packet;
   }
 
   public void run() {
@@ -45,12 +43,6 @@ public class PacketSender implements SendJob {
       System.err.println("Failed to acquire socket semaphore:");
       e.printStackTrace();
     }
-    try {
-      this.doneQueue.put(this);
-    } catch (InterruptedException e) {
-      System.err.println("Failed to add to done queue.");
-      e.printStackTrace();
-    }
   }
 
   @Override
@@ -65,7 +57,12 @@ public class PacketSender implements SendJob {
   }
 
   @Override
-  public AckHeader getAckHeader() { return new AckHeader(packet); }
+  public AckHeader getAckHeader() {
+    if (this.ackHeader == null)
+      return this.ackHeader = new AckHeader(packet);
+    else
+      return this.ackHeader;
+  }
 
   @Override
   public int numClients() { return 1; }

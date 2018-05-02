@@ -60,7 +60,7 @@ public class WriteHeader extends Header {
 
   @Override
   public int hashCode() {
-    return Long.hashCode(this.channelID) ^ Long.hashCode(this.msgID) ^ this.msg.hashCode() ^ this.username.hashCode();
+    return Long.hashCode(this.channelID) ^ this.msg.hashCode() ^ this.username.hashCode();
   }
 
   public String getMsg() { return this.msg; }
@@ -85,7 +85,6 @@ public class WriteHeader extends Header {
     if (o == null || getClass() != o.getClass()) return false;
     WriteHeader that = (WriteHeader) o;
     return channelID == that.channelID &&
-      msgID == that.msgID &&
       Objects.equals(msg, that.msg) &&
       Objects.equals(username, that.username);
   }

@@ -74,9 +74,9 @@ public class SocketManager {
           final Header header = HeaderFactory.getInstance().readHeader(in);
           final InetSocketAddress src = new InetSocketAddress(received.getAddress(), received.getPort());
           receivedItems.put(job(header, src));
-          System.out.println("Received header with opcode " + header.opcode() + " to host " + src);
-
-          if (header.opcode() != Constants.OP_ACK) {
+          System.out.println("Received header with opcode " + header.opcode() + " from host " + src);
+          if (header.opcode() != Constants.OP_ACK && header.opcode() != Constants.OP_HEARTBEAT) {
+            System.out.println("Sending ACK");
             toSend.put(job(new AckHeader(header), src));
           }
         } catch (InterruptedException | SocketTimeoutException ignored) {

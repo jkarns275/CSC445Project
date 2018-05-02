@@ -56,7 +56,6 @@ public class Client implements Runnable {
       try {
         nanoTime = System.nanoTime();
 
-        System.out.println("Hey");
         this.hio.update();
         this.heartbeatSender.update();
         this.heartbeatManager.update();
@@ -90,10 +89,9 @@ public class Client implements Runnable {
               // for a writeHeader with the same magic value.
               System.out.println("Received magic: " + writeHeader.getMagic() + " and have magic: " +
                 (!this.writeRecvQueue.isEmpty() ? this.writeRecvQueue.pollFirstEntry().getValue().second().getMagic() : 0xDEADBEEF));
-              
+
               if (username != null && username.equals(writeHeader.getUsername()) &&
                   this.writeRecvQueue.containsKey(writeHeader.getMagic())) {
-                System.out.println("Howdy");
                 prevHeader = header;
                 this.writeRecvQueue.remove(writeHeader.getMagic());
               }
@@ -112,11 +110,9 @@ public class Client implements Runnable {
                 if (channels.containsKey(sourceHeader.getChannelID()))
                   channels.remove(sourceHeader.getChannelID());
                 channels.put(sourceHeader.getChannelID(), sourceHeader.getAssignedUsername());
-                System.out.println("Before");
                 synchronized (this) {
                     notifyAll();
                 }
-              System.out.println("After");
                 break;
             case OP_NAK:        break;
             case OP_ERROR:      break;

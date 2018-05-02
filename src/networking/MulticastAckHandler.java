@@ -28,8 +28,8 @@ public class MulticastAckHandler implements AckJob {
       this.missingAcks = missingAcks; this.packet = packet; this.socket = socket;
     }
 
-    public SendJob resend(LinkedBlockingQueue<SendJob> doneQueue) {
-      return (SendJob) new MulticastPacketSender(true, this.packet, this.missingAcks, this.socket, doneQueue);
+    public SendJob resend() {
+      return (SendJob) new MulticastPacketSender(true, this.packet, this.missingAcks, this.socket);
     }
 
     @Override

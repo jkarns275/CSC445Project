@@ -17,7 +17,6 @@ public class HeaderIOManager {
   private final ThreadPoolExecutor pool;
   private final LinkedBlockingQueue<AckResult> ackResultQueue = new LinkedBlockingQueue<>(1024);
   private final HashMap<AckHeader, ArrayBlockingQueue<InetSocketAddress>> ackQueues = new HashMap<>();
-  private final LinkedBlockingQueue<SendJob> doneQueue = new LinkedBlockingQueue<>(1024);
   private final InetSocketAddress sa;
 
   public SocketManager getSocket() {
@@ -33,14 +32,34 @@ public class HeaderIOManager {
   }
 
   public SendJob packetSender(Header h, InetSocketAddress to) {
-    return new PacketSender(h.opcode() != Constants.OP_ACK, h, to, socket, doneQueue);
+    SendJob job = new PacketSender(h.opcode() != Constants.OP_ACK && h.opcode() != Constants.OP_HEARTBEAT, h, to,
+      socket);
+    addToAckQueues(job);
+    return job;
   }
 
   public SendJob multicastPacketSender(Header h, Collection<InetSocketAddress> to) {
-    return new MulticastPacketSender(h.opcode() != Constants.OP_ACK, h, new HashSet<>(to), socket, doneQueue);
+    SendJob job = new MulticastPacketSender(h.opcode() != Constants.OP_ACK && h.opcode() != Constants.OP_HEARTBEAT,
+      h, new HashSet<>(to), socket);
+    addToAckQueues(job);
+    return job;
   }
 
-  public void send(SendJob job) { pool.execute(job); }
+  private void addToAckQueues(SendJob job) {
+    if (job.needsAck()) {
+      AckHeader header = job.getAckHeader();
+      ArrayBlockingQueue<InetSocketAddress> queue = new ArrayBlockingQueue<>(job.numClients());
+      System.out.println("Adding " + header.getBody() + " to ack queues");
+      ackQueues.put(header, queue);
+      pool.execute(job.getAckJob(queue, ackResultQueue));
+    }
+  }
+
+  public void send(SendJob job) {
+    // Only put multicast jobs into the background, since single jobs will be quick
+    if (job instanceof PacketSender) job.run();
+    else pool.execute(job);
+  }
 
   public SocketRequest recv() throws InterruptedException { return socket.recv(); }
 
@@ -48,32 +67,15 @@ public class HeaderIOManager {
    * Updates the HeaderIOManager. This involves checking for finished SendJobs and resending them if necessary.
    */
   public void update() {
-    // Process all SendJobs that have finished
-    try {
-      while (!doneQueue.isEmpty()) {
-        System.out.println(doneQueue);
-        SendJob finishedJob = doneQueue.poll(0, TimeUnit.MILLISECONDS);
-        if (finishedJob.needsAck()) {
-          AckHeader header = finishedJob.getAckHeader();
-          ArrayBlockingQueue<InetSocketAddress> queue = new ArrayBlockingQueue<>(finishedJob.numClients());
-          ackQueues.put(header, queue);
-          pool.execute(finishedJob.getAckJob(queue, ackResultQueue));
-        }
-      }
-    } catch (InterruptedException e) {
-      System.err.println("Failed to poll from doneQueue without waiting.");
-    }
-
     // Process all AckResults
     try {
       while (!ackResultQueue.isEmpty()) {
         AckResult r = ackResultQueue.poll(0, TimeUnit.MILLISECONDS);
+        this.ackQueues.remove(r.resend().getAckHeader());
         if (!r.wasSuccessful()) {
-          SendJob sendJob = r.resend(doneQueue);
+          SendJob sendJob = r.resend();
           sendJob.setNeedsAck(false);
           send(sendJob);
-        } else {
-          this.ackQueues.remove(r.resend(doneQueue).getAckHeader());
         }
       }
     } catch (InterruptedException e) {
@@ -83,12 +85,17 @@ public class HeaderIOManager {
 
   public void processAckHeader(AckHeader ackHeader, InetSocketAddress source) throws InterruptedException {
     if (this.ackQueues.containsKey(ackHeader)) {
+      System.out.println("Received ack for " + ackHeader);
       ArrayBlockingQueue<InetSocketAddress> queue = this.ackQueues.get(ackHeader);
       queue.put(source);
+    } else {
+      System.out.println(ackHeader.getBody());
+      for (AckHeader h : this.ackQueues.keySet()) {
+        System.out.println("    " + h.getBody() + ", " + h.equals(ackHeader) + ", " + (h.getBody().equals(ackHeader.getBody())));
+      }
     }
   }
 
-  public LinkedBlockingQueue<SendJob> getDoneQueue() { return doneQueue; }
 
   public List<Runnable> shutdownNow() throws InterruptedException { this.socket.send(new KillRequest()); return this.pool.shutdownNow(); }
 

@@ -20,14 +20,6 @@ public class AckHeader extends Header {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    AckHeader ackHeader = (AckHeader) o;
-    return Objects.equals(body, ackHeader.body);
-  }
-
-  @Override
   public void writeObject(ObjectOutputStream out) throws IOException {
     out.writeByte(opcode());
     body.writeObject(out);
@@ -39,10 +31,15 @@ public class AckHeader extends Header {
   }
 
   @Override
+  public boolean equals(Object o) {
+    return o instanceof AckHeader && ((AckHeader) o).body.equals(this.body);
+  }
+
+  @Override
   public int opcode() { return Constants.OP_ACK; }
 
   @Override
-  public int hashCode() { return this.opcode() ^ body.opcode(); }
+  public int hashCode() { return this.opcode() ^ body.opcode() ^ body.hashCode(); }
 
   public Header getBody() { return body; }
 }

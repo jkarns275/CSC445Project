@@ -20,13 +20,11 @@ public class MulticastPacketSender implements SendJob {
   private final SocketManager socket;
   private final Header packet;
   private boolean needsAck;
+  private AckHeader ackHeader = null;
 
-  private LinkedBlockingQueue<SendJob> doneQueue;
 
-  MulticastPacketSender(boolean needsAck, Header packet, HashSet<InetSocketAddress> recipients, SocketManager socket,
-                        LinkedBlockingQueue<SendJob> doneQueue) {
+  MulticastPacketSender(boolean needsAck, Header packet, HashSet<InetSocketAddress> recipients, SocketManager socket) {
     this.needsAck = needsAck; this.recipients = recipients; this.socket = socket; this.packet = packet;
-    this.doneQueue = doneQueue;
   }
 
   public void run() {
@@ -38,12 +36,7 @@ public class MulticastPacketSender implements SendJob {
       System.err.println("Failed to send packet:");
       e.printStackTrace();
     }
-    try {
-      this.doneQueue.put(this);
-    } catch (InterruptedException e) {
-      System.err.println("Failed to add to done queue.");
-      e.printStackTrace();
-    }
+
   }
 
   @Override
@@ -60,7 +53,12 @@ public class MulticastPacketSender implements SendJob {
   }
 
   @Override
-  public AckHeader getAckHeader() { return new AckHeader(packet); }
+  public AckHeader getAckHeader() {
+    if (this.ackHeader == null)
+      return this.ackHeader = new AckHeader(packet);
+    else
+      return this.ackHeader;
+  }
 
   @Override
   public int numClients() { return recipients.size(); }

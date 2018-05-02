@@ -26,8 +26,8 @@ public class AckHandler implements AckJob {
       this.receivedAck = receivedAck; this.packet = packet; this.address = address; this.socket = socket;
     }
 
-    public SendJob resend(LinkedBlockingQueue<SendJob> doneQueue) {
-      return new PacketSender(true, this.packet, this.address, this.socket, doneQueue);
+    public SendJob resend() {
+      return new PacketSender(true, this.packet, this.address, this.socket);
     }
 
     public boolean wasSuccessful() { return receivedAck; }

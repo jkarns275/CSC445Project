@@ -50,7 +50,6 @@ public class ChannelPanel extends JPanel {
 
     private void updateDisplay() {
         chatArea.setText("");
-        System.out.println(this.messages);
         for (Message msg : messages) {
             SwingUtilities.invokeLater(() -> chatArea.setText(chatArea.getText() +
                     String.format("[%3d] %19s| %s%n", msg.getId(), msg.getNick(), msg.getContent())));

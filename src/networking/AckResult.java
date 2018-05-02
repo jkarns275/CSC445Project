@@ -7,7 +7,7 @@ public interface AckResult {
   /**
    * @return Returns a runnable object that will resend packets to hosts that failed to send an ack.
    */
-  public SendJob resend(LinkedBlockingQueue<SendJob> doneQueue);
+  public SendJob resend();
 
   /**
    * @return If all acks that were expected were received, returns true, otherwise false.
