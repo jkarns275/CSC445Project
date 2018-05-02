@@ -38,6 +38,7 @@ public class Client implements Runnable {
   private boolean leaveSuccess = false;
   private String awaitNick = null;
   private Header prevHeader;
+  private long nanoTime = System.nanoTime();
 
   public Client(InetSocketAddress server, int port) throws IOException {
 
@@ -53,14 +54,16 @@ public class Client implements Runnable {
     long last = System.nanoTime();
     for (;;)
       try {
+        nanoTime = System.nanoTime();
+
         System.out.println("Hey");
         this.hio.update();
         this.heartbeatSender.update();
         this.heartbeatManager.update();
 
-        if (System.nanoTime() - last > Client.HEARTBEAT_MANAGER_CLEAN_DELAY) {
+        if (nanoTime - last > Client.HEARTBEAT_MANAGER_CLEAN_DELAY) {
           this.heartbeatManager.clean();
-          last = System.nanoTime();
+          last = nanoTime;
         }
 
         updateWriteRecvQueue();
@@ -81,27 +84,35 @@ public class Client implements Runnable {
             case OP_WRITE:
               WriteHeader writeHeader = (WriteHeader) header;
               // check if write response
-              String username = this.channels.get(writeHeader.getMsgID());
+              String username = this.channels.get(writeHeader.getChannelID());
               // If this client has a username for the channel this writeHeader is intended for,
               // the username the header specifies is the same as ours, and if we are waiting
               // for a writeHeader with the same magic value.
+              System.out.println("Received magic: " + writeHeader.getMagic() + " and have magic: " +
+                (!this.writeRecvQueue.isEmpty() ? this.writeRecvQueue.pollFirstEntry().getValue().second().getMagic() : 0xDEADBEEF));
+              
               if (username != null && username.equals(writeHeader.getUsername()) &&
                   this.writeRecvQueue.containsKey(writeHeader.getMagic())) {
+                System.out.println("Howdy");
                 prevHeader = header;
                 this.writeRecvQueue.remove(writeHeader.getMagic());
-              } else {
-                  // message from another user
-                  System.out.println("Received message with message ID '" + writeHeader.getMsgID() + "'");
-                  pool.submit(() -> GUI.writeMessage(writeHeader.getChannelID(), writeHeader.getMsgID(),
-                          writeHeader.getUsername(), writeHeader.getMsg()));
               }
+              // Display the message either way
+              System.out.println("Received message with message ID '" + writeHeader.getMsgID() + "'");
+              pool.submit(() -> GUI.writeMessage( writeHeader.getChannelID(), writeHeader.getMsgID(),
+                                                  writeHeader.getUsername(), writeHeader.getMsg()));
+
               break;
             case OP_JOIN:       break;
             case OP_LEAVE:      break;
             case OP_SOURCE:
                 prevHeader =  header;
                 sourceReceived = true;
-              System.out.println("Before");
+                SourceHeader sourceHeader = (SourceHeader) header;
+                if (channels.containsKey(sourceHeader.getChannelID()))
+                  channels.remove(sourceHeader.getChannelID());
+                channels.put(sourceHeader.getChannelID(), sourceHeader.getAssignedUsername());
+                System.out.println("Before");
                 synchronized (this) {
                     notifyAll();
                 }
@@ -148,7 +159,7 @@ public class Client implements Runnable {
 
   private void sendWriteHeader(long channelID, long messageID, String nick, String message) {
     WriteHeader writeHeader = new WriteHeader(channelID, messageID, message, nick);
-    this.writeRecvQueue.put(writeHeader.getMagic(), new Tuple<>(System.nanoTime(), writeHeader));
+    this.writeRecvQueue.put(writeHeader.getMagic(), new Tuple<>(nanoTime, writeHeader));
     hio.send(hio.packetSender(writeHeader, server));
   }
 
@@ -219,11 +230,12 @@ public class Client implements Runnable {
 
   private void updateWriteRecvQueue() {
     while (!this.writeRecvQueue.isEmpty()) {
-      if (this.writeRecvQueue.firstEntry().getValue().first() > Constants.SECONDS_TO_NANOS * WRITE_TIMEOUT) {
+      if (nanoTime - this.writeRecvQueue.firstEntry().getValue().first() > Constants.SECONDS_TO_NANOS *
+        WRITE_TIMEOUT) {
         Map.Entry<Long, Tuple<Long, WriteHeader>> entry = this.writeRecvQueue.pollFirstEntry();
         WriteHeader writeHeader = entry.getValue().second();
-        pool.submit(() -> GUI.writeMessage(writeHeader.getChannelID(), writeHeader.getMsgID(),
-                                            "ERROR", "Failed to send message '" + writeHeader.getMsg() + "'"));
+        pool.submit(() -> GUI.getInstance().printToMesssageChannel("ERROR", "Failed to send message '" +
+          writeHeader.getMsg() + "' to channel " + writeHeader.getChannelID()));
         continue;
       }
       break;

@@ -95,8 +95,6 @@ public class ChannelPanel extends JPanel {
     public long[] validateOrdering() {
         long prev = messages.first().getId() - 1;
         for (Message message : messages) {
-            System.out.println("Message ID: " + message.getId());
-
             if (prev + 1 != message.getId()) {
                 long[] result = { prev+1, message.getId() };
                 return result;

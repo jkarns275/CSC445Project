@@ -64,7 +64,7 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private void printToMesssageChannel(String sender, String message) {
+    public synchronized void printToMesssageChannel(String sender, String message) {
         messagePanel.addMessage(sender, message);
     }
 

@@ -8,7 +8,7 @@ public class GUI {
         static final MainFrame INSTANCE = new MainFrame();
     }
 
-    private static MainFrame getInstance() {
+    static MainFrame getInstance() {
         return MainFrameHolder.INSTANCE;
     }
 
