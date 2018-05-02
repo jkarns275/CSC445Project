@@ -7,9 +7,9 @@ Each packet begins with a one byte opcode which determines the type of packet.
 
 ## Write Packet
 
-| 1 byte | 8 bytes     | 8 bytes | 2 bytes | `msg len` bytes  | 1 byte       | `username len` bytes |
-| ------ | ----------- | ------- | ------- | ---------------- | ------------ | -------------------- |
-| 0x00   | Channel ID# | Msg ID# | Msg Len | Message Contents | Username Len | Username             |
+| 1 byte | 8 bytes     | 8 bytes | 8 bytes | 2 bytes | `msg len` bytes  | 1 byte       | `username len` bytes |
+| ------ | ----------- | ------- | ------- | ------- | ---------------- | ------------ | -------------------- |
+| 0x00   | Channel ID# | Msg ID# | magic   | Msg Len | Message Contents | Username Len | Username             |
 
 `Write packets` are used by clients to send chat messages to the server, and by
 the server to send chat messages to clients.
@@ -26,6 +26,9 @@ error number `No Such Channel`.
 When a client receives a write header from the server, it should display the
 corresponding message in the proper order, where messages with a lower ID# are
 displayed first.
+
+The `magic` field is used to differentiate between messages sent by a client
+that have the same contents. 
 
 
 
