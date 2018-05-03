@@ -113,9 +113,6 @@ public class Server {
                 SocketRequest receive;
                 while ((receive = headerManager.recv()) != null) {
                     Header header = receive.getHeader();
-
-//                    System.out.println(header);
-
                     InetSocketAddress srcAddr = receive.getAddress();
 
                     if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
@@ -148,7 +145,6 @@ public class Server {
                             break;
 
                         case OP_COMMAND:
-                            System.out.println("=================Command=================");
                             executorPool.execute(new CommandWorker((CommandHeader) header, srcAddr));
                             break;
 

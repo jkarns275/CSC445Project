@@ -131,7 +131,7 @@ public class MainFrame extends JFrame {
                     }
                     break;
                 case "/op":
-                    client.sendCommandHeader(channel.getChannelID(), input.substring(4));
+                    client.sendCommandHeader(channel.getChannelID(), input);
                     break;
                 case "/help":
                 default:

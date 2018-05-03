@@ -23,13 +23,18 @@ public class CommandWorker implements Runnable {
 
     public void run() {
         Channel channel = Server.getChannel(commandHeader.getChannelID());
+
+        System.out.println("Command following:");
+        System.out.println(commandHeader.getCommand());
+
         String command[] = commandHeader.getCommand().split(" ");
-        if (command[0].equals("me")) {
+
+        if (command[0].equals("/me")) {
             commandHeader.setMsgID(channel.getAndIncrementMsgID());
             channel.addToTreeMap(commandHeader.getMsgID(), commandHeader);
             channel.sendPacket(commandHeader, address);
 
-        } else if (command[0].equals("op")) {
+        } else if (command[0].equals("/op")) {
             switch(command[1]) {
                 case "kick":
                     channel.users.remove(command[2]);
@@ -43,6 +48,7 @@ public class CommandWorker implements Runnable {
                 case "mute":
                     System.out.println(command[2]);
                     if (channel.users.get(command[2]) != null) {
+                        System.out.println("User muted");
                         channel.users.get(command[2]).setMuted(true);
                         msgID = channel.getAndIncrementMsgID();
                         infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]

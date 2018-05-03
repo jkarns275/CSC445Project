@@ -23,7 +23,7 @@ public class CommandHeader extends Header {
     out.writeByte(Constants.OP_COMMAND);
     out.writeLong(channelID);
     out.writeLong(msgID);
-    out.writeShort(command.length());
+    out.writeByte(command.length());
     out.writeBytes(command);
   }
 
