@@ -133,6 +133,7 @@ public class Server {
                             break;
 
                         case OP_NAK:
+                            System.out.println("got here");
                             executorPool.execute(new NakWorker((NakHeader) header, srcAddr));
                             break;
 

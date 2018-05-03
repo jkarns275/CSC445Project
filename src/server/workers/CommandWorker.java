@@ -23,15 +23,11 @@ public class CommandWorker implements Runnable {
 
     public void run() {
         Channel channel = Server.getChannel(commandHeader.getChannelID());
-
-        System.out.println("Command following:");
-        System.out.println(commandHeader.getCommand());
-
         String command[] = commandHeader.getCommand().split(" ");
 
         if (command[0].equals("/me")) {
             commandHeader.setMsgID(channel.getAndIncrementMsgID());
-            channel.addToTreeMap(commandHeader.getMsgID(), commandHeader);
+            channel.addToBufferedTreeMap(commandHeader.getMsgID(), commandHeader);
             channel.sendPacket(commandHeader, address);
 
         } else if (command[0].equals("/op")) {
@@ -41,7 +37,7 @@ public class CommandWorker implements Runnable {
                     msgID = channel.getAndIncrementMsgID();
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x00, msgID, "User, " + command[2]
                             + ", kicked from channel, " + channel.channelID + ".");
-                    channel.addToTreeMap(msgID, infoHeader);
+                    channel.addToBufferedTreeMap(msgID, infoHeader);
                     channel.sendPacket(infoHeader, address);
                     break;
 
@@ -53,7 +49,7 @@ public class CommandWorker implements Runnable {
                         msgID = channel.getAndIncrementMsgID();
                         infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]
                                 + ", muted in channel, " + channel.channelID + ".");
-                        channel.addToTreeMap(msgID, infoHeader);
+                        channel.addToBufferedTreeMap(msgID, infoHeader);
                         channel.sendPacket(infoHeader, address);
                     } else {
                         System.out.println("Null");
@@ -68,7 +64,7 @@ public class CommandWorker implements Runnable {
                     msgID = channel.getAndIncrementMsgID();
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x02, msgID, "User, " + command[2]
                             + ", unmuted in channel, " + channel.channelID + ".");
-                    channel.addToTreeMap(msgID, infoHeader);
+                    channel.addToBufferedTreeMap(msgID, infoHeader);
                     channel.sendPacket(infoHeader, address);
                     break;
 

@@ -21,8 +21,8 @@ public class NakWorker implements Runnable {
         Channel channel = Server.getChannel(header.getChannelID());
         long upperMsg = header.getUpperMsgID();
         long lowerMsg = header.getLowerMsgID();
-        for (long i = lowerMsg; ((upperMsg - i) > 0); i++) {
-            Header bufferedHeader = channel.getFromTreeMap(i).getHeader();
+        for (Long i = lowerMsg; ((upperMsg - i) > 0); i++) {
+            Header bufferedHeader = channel.getFromBufferedTreeMap(i).getHeader();
             if (bufferedHeader != null) {
                 channel.sendPacket(bufferedHeader,address);
             } else {

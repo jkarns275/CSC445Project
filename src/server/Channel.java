@@ -114,15 +114,15 @@ public class Channel {
         pw.println("[" + msgID + "] " + header.toString());
     }
 
-    public synchronized void addToTreeMap(Long msgID, Header header) {
+    public synchronized void addToBufferedTreeMap(long msgID, Header header) {
         this.bufferedMessages.put(msgID,new BufferedMessageEntry(header));
     }
 
-    public synchronized void removeFromTreeMap(Long msgID) {
+    public synchronized void removeFromBufferedTreeMap(long msgID) {
         this.bufferedMessages.remove(msgID);
     }
 
-    public synchronized BufferedMessageEntry getFromTreeMap(Long msgID) {
+    public synchronized BufferedMessageEntry getFromBufferedTreeMap(Long msgID) {
         return this.bufferedMessages.get(msgID);
     }
 
