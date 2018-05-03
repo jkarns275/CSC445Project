@@ -28,7 +28,7 @@ corresponding message in the proper order, where messages with a lower ID# are
 displayed first.
 
 The `magic` field is used to differentiate between messages sent by a client
-that have the same contents. 
+that have the same contents.
 
 
 
@@ -111,11 +111,11 @@ The following table contains all valid error codes and their meanings.
 
 ## Heartbeat Packet
 
-| 1 byte |
-| ------ |
-| 0x06   |
+| 1 byte | 8 bytes     |
+| ------ | ----------- |
+| 0x06   | Channel ID# |
 
-`Conglomerate packets` are sent by both the client and server to signal that
+`Heartbeat packets` are sent by both the client and server to signal that
 they're still alive and listening. A heartbeat packet should be sent at least
 every 20 seconds.
 

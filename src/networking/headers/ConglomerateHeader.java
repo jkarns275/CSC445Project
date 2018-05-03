@@ -16,7 +16,7 @@ public class ConglomerateHeader extends Header {
   private final LinkedList<Header> headers = new LinkedList<Header>();
 
   public ConglomerateHeader(Collection<Header> headers) {
-    headers.addAll(headers);
+    this.headers.addAll(headers);
   }
 
   ConglomerateHeader() {}

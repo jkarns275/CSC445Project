@@ -12,7 +12,7 @@ public class Constants {
   public final static int OP_INFO =                0x07;
   public final static int OP_COMMAND =             0x08;
   public final static int OP_ACK =                 0x09;
-  public final static int OP_CONG =                0x0FF;
+  public final static int OP_CONG =                -1;
 
   public final static int OPCODE_INDEX =           0;
 
