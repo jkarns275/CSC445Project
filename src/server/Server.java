@@ -34,7 +34,7 @@ public class Server {
     static {
       Server instance1;
       try {
-            instance1 = new Server(2704);
+            instance1 = new Server(2703);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(0);
@@ -113,6 +113,9 @@ public class Server {
                 SocketRequest receive;
                 while ((receive = headerManager.recv()) != null) {
                     Header header = receive.getHeader();
+
+//                    System.out.println(header);
+
                     InetSocketAddress srcAddr = receive.getAddress();
 
                     if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
@@ -145,6 +148,7 @@ public class Server {
                             break;
 
                         case OP_COMMAND:
+                            System.out.println("=================Command=================");
                             executorPool.execute(new CommandWorker((CommandHeader) header, srcAddr));
                             break;
 

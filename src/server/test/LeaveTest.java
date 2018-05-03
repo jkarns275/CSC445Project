@@ -53,6 +53,7 @@ public class LeaveTest {
 
                     boolean errorcode = false;
                     boolean errormessage = false;
+                    boolean removeduser = false;
 
                     ErrorHeader errorHeader = (ErrorHeader) receive.getHeader();
 
@@ -60,10 +61,11 @@ public class LeaveTest {
                     System.out.println(" -Error code: " + errorHeader.getErrorCode());
                     System.out.println(" -Error message: " + errorHeader.getErrorMsg());
 
-                    if (errorHeader.getErrorCode() == 0x00) { errorcode = true; }
-                    if (errorHeader.getErrorMsg().equals("Connection closed")) { errormessage = true; }
+                    if (errorHeader.getErrorCode() == 0x00) errorcode = true;
+                    if (errorHeader.getErrorMsg().equals("Connection closed")) errormessage = true;
+                    if (Server.getChannel((long) 1).users.values().isEmpty())  removeduser = true;
 
-                    return errorcode && errormessage;
+                    return errorcode && errormessage && removeduser;
                 } else {
                     System.out.println("Received header of type: " + opcode);
                 }

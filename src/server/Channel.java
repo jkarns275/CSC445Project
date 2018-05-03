@@ -9,7 +9,6 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.TreeMap;
 
@@ -17,6 +16,7 @@ public class Channel {
     final int MAX_BUFFERED_MESSAGES = 100;
     public long channelID;
     private long msgID = 0;
+    private long lastLoggedMsg = 0;
 
     public String channelName;
     private File log;
@@ -30,7 +30,7 @@ public class Channel {
 
     public Channel(String channelName, long id) {
         this.channelName = channelName;
-        this.log = new File(channelName);
+        this.log = new File("logs/" + channelName + ".txt");
         this.channelID = id;
     }
 
@@ -78,26 +78,40 @@ public class Channel {
     }
 
     public synchronized long getAndIncrementMsgID() {
-        long tmp = msgID;
-        ++msgID;
-        return tmp;
+        return ++msgID;
+    }
+
+    public synchronized  long getLastLoggedMsg () {
+        return lastLoggedMsg;
+    }
+
+    public synchronized void incrementLastLoggedMsg(long increment) {
+        lastLoggedMsg += increment;
     }
 
     public void update() throws FileNotFoundException {
+        if (lastLoggedMsg != msgID) {
+//            PrintWriter pw = new PrintWriter(log);
+            for (long index = lastLoggedMsg+1; index != msgID; index++) {
+                BufferedMessageEntry e = bufferedMessages.get(index);
+                System.err.printf("[" + e.militime + "] " + e.header.toString());
+//                pw.println("[" + e.militime + "] " + e.header.toString());
+                lastLoggedMsg = index;
+            }
+//            pw.close();
+        }
         if (bufferedMessages.keySet().size() > MAX_BUFFERED_MESSAGES) {
-            PrintWriter pw = new PrintWriter(log);
-            ArrayList<BufferedMessageEntry> toPrint = new ArrayList<>();
             for (Long index : bufferedMessages.keySet()) {
                 if (index < msgID - MAX_BUFFERED_MESSAGES) {
-                    toPrint.add(bufferedMessages.remove(index));
+                    bufferedMessages.remove((index));
                 }
             }
-            Collections.sort(toPrint);
-            for (BufferedMessageEntry entry : toPrint) {
-                pw.println("[" + entry.militime + "] " + entry.header.toString());
-            }
-            pw.close();
         }
+    }
+
+    public synchronized void log(Long msgID, Header header) throws FileNotFoundException {
+        PrintWriter pw = new PrintWriter(log);
+        pw.println("[" + msgID + "] " + header.toString());
     }
 
     public synchronized void addToTreeMap(Long msgID, Header header) {

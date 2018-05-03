@@ -49,7 +49,7 @@ public class HeaderIOManager {
     if (job.needsAck()) {
       AckHeader header = job.getAckHeader();
       ArrayBlockingQueue<InetSocketAddress> queue = new ArrayBlockingQueue<>(job.numClients());
-      System.out.println("Adding " + header.getBody() + " to ack queues");
+//      System.out.println("Adding " + header.getBody() + " to ack queues");
       ackQueues.put(header, queue);
       pool.execute(job.getAckJob(queue, ackResultQueue));
     }
@@ -85,7 +85,7 @@ public class HeaderIOManager {
 
   public void processAckHeader(AckHeader ackHeader, InetSocketAddress source) throws InterruptedException {
     if (this.ackQueues.containsKey(ackHeader)) {
-      System.out.println("Received ack for " + ackHeader);
+//      System.out.println("Received ack for " + ackHeader);
       ArrayBlockingQueue<InetSocketAddress> queue = this.ackQueues.get(ackHeader);
       queue.put(source);
     } else {

@@ -5,7 +5,6 @@ import networking.headers.ErrorHeader;
 import networking.headers.WriteHeader;
 import server.Channel;
 import server.Server;
-import server.User;
 
 import java.net.InetSocketAddress;
 
@@ -24,6 +23,7 @@ public class WriteWorker implements Runnable {
             if (channel.users.get(writeHeader.getUsername()).getMuted()) return;
             writeHeader.setMsgID(channel.getAndIncrementMsgID());
             channel.addToTreeMap(writeHeader.getMsgID(), writeHeader);
+            System.out.println(writeHeader.getMsg());
             channel.sendPacket(writeHeader);
         } else {
             ErrorHeader header = new ErrorHeader((byte)0x02,"No such channel exists");

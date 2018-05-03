@@ -14,6 +14,7 @@ public class ErrorHeader extends Header {
   public static final byte ERROR_NO_SUCH_CHANNEL       = 0x02;
   public static final byte ERROR_FAILED_CHANNEL_CREATE = 0x03;
   public static final byte ERROR_FAILED_CHANNEL_JOIN   = 0x04;
+  public static final byte ERROR_NO_SUCH_USER          = 0x05;
 
   private byte errorCode;
   private String errorMsg;

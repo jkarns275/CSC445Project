@@ -1,11 +1,14 @@
 package server.workers;
 
 import networking.headers.CommandHeader;
+import networking.headers.ErrorHeader;
 import networking.headers.InfoHeader;
 import server.Channel;
 import server.Server;
 
 import java.net.InetSocketAddress;
+
+import static networking.headers.ErrorHeader.ERROR_NO_SUCH_USER;
 
 public class CommandWorker implements Runnable {
     CommandHeader commandHeader;
@@ -23,8 +26,8 @@ public class CommandWorker implements Runnable {
         String command[] = commandHeader.getCommand().split(" ");
         if (command[0].equals("me")) {
             commandHeader.setMsgID(channel.getAndIncrementMsgID());
-            channel.addToTreeMap(commandHeader.getMsgID(),commandHeader);
-            channel.sendPacket(commandHeader,address);
+            channel.addToTreeMap(commandHeader.getMsgID(), commandHeader);
+            channel.sendPacket(commandHeader, address);
 
         } else if (command[0].equals("op")) {
             switch(command[1]) {
@@ -34,16 +37,24 @@ public class CommandWorker implements Runnable {
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x00, msgID, "User, " + command[2]
                             + ", kicked from channel, " + channel.channelID + ".");
                     channel.addToTreeMap(msgID, infoHeader);
-                    channel.sendPacket(infoHeader,address);
+                    channel.sendPacket(infoHeader, address);
                     break;
 
                 case "mute":
-                    channel.users.get(command[2]).setMuted(true);
-                    msgID = channel.getAndIncrementMsgID();
-                    infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]
-                            + ", muted in channel, " + channel.channelID + ".");
-                    channel.addToTreeMap(msgID, infoHeader);
-                    channel.sendPacket(infoHeader,address);
+                    System.out.println(command[2]);
+                    if (channel.users.get(command[2]) != null) {
+                        channel.users.get(command[2]).setMuted(true);
+                        msgID = channel.getAndIncrementMsgID();
+                        infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]
+                                + ", muted in channel, " + channel.channelID + ".");
+                        channel.addToTreeMap(msgID, infoHeader);
+                        channel.sendPacket(infoHeader, address);
+                    } else {
+                        System.out.println("Null");
+                        ErrorHeader errorHeader = new ErrorHeader(ERROR_NO_SUCH_USER, "User " + command[2]
+                                + " does not exists in channel" + channel.channelID + ".");
+                        channel.sendPacket(errorHeader,address);
+                    }
                     break;
 
                 case "unmute":
@@ -52,7 +63,7 @@ public class CommandWorker implements Runnable {
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x02, msgID, "User, " + command[2]
                             + ", unmuted in channel, " + channel.channelID + ".");
                     channel.addToTreeMap(msgID, infoHeader);
-                    channel.sendPacket(infoHeader,address);
+                    channel.sendPacket(infoHeader, address);
                     break;
 
                 default:

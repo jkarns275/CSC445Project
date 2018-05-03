@@ -6,6 +6,7 @@ import common.Tuple;
 import networking.*;
 import networking.headers.*;
 import static common.Constants.*;
+import static networking.headers.ErrorHeader.*;
 
 import java.io.IOException;
 import java.net.InetAddress;

@@ -104,6 +104,7 @@ The following table contains all valid error codes and their meanings.
 | 0x02       | No Such Channel          |
 | 0x03       | Failed channel creation  |
 | 0x04       | Failed channel join      |
+| 0x05       | No such user             |
 (more to come)
 
 
