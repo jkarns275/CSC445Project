@@ -5,8 +5,10 @@ import client.reps.Message;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 public class ChannelPanel extends JPanel {
 
@@ -14,6 +16,7 @@ public class ChannelPanel extends JPanel {
     private final String channelName;
     private final String nick;
     private JTextArea chatArea;
+    private JScrollPane scrollPane;
     private SortedSet<Message> messages;
     private long firstMessageID = -1;
     //private JTextArea onlineUsers;
@@ -40,7 +43,12 @@ public class ChannelPanel extends JPanel {
     private void initWidgets() {
         chatArea = new JTextArea();
         chatArea.setEditable(false);
-        this.add(chatArea, BorderLayout.CENTER);
+
+        scrollPane = new JScrollPane(chatArea);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+
+        this.add(scrollPane, BorderLayout.CENTER);
 
         /*
         onlineUsers = new JTextArea();
@@ -51,9 +59,18 @@ public class ChannelPanel extends JPanel {
 
     private void updateDisplay() {
         chatArea.setText("");
-        for (Message msg : messages) {
-            SwingUtilities.invokeLater(() -> chatArea.setText(chatArea.getText() +
-                    String.format("[%3d] %19s| %s%n", msg.getId(), msg.getNick(), msg.getContent())));
+
+        String newContent =
+            messages.stream()
+            .map((msg) -> String.format("[%3d] %19s| %s\n", msg.getId(), msg.getNick(), msg.getContent()))
+            .reduce(String::concat)
+            .get();
+        this.chatArea.setText(newContent);
+
+
+        JScrollBar vert = scrollPane.getVerticalScrollBar();
+        if (vert != null) {
+            vert.setValue(vert.getMaximum());
         }
     }
 
