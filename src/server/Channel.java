@@ -102,11 +102,9 @@ public class Channel {
 //            pw.close();
         }
         if (bufferedMessages.keySet().size() > MAX_BUFFERED_MESSAGES) {
-            for (Long index : bufferedMessages.keySet()) {
-                if (index < msgID - MAX_BUFFERED_MESSAGES) {
-                    bufferedMessages.remove((index));
-                }
-            }
+          for (long i = bufferedMessages.firstKey(); i >= 0; i++) {
+            bufferedMessages.remove(i);
+          }
         }
     }
 
