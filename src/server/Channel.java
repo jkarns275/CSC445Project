@@ -40,7 +40,7 @@ public class Channel {
      */
     public synchronized String addUser(User user) {
         for (User u : users.values()) {
-            if (u.address.getAddress().equals(user.address.getAddress())) {
+            if (u.address.equals(user.address)) {
                 return null;
             }
         }
