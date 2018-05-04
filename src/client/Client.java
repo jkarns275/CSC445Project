@@ -125,17 +125,7 @@ public class Client implements Runnable {
               break;
             case OP_INFO:
                 InfoHeader infoHeader = (InfoHeader) header;
-                if (infoHeader.getInfoCode() == 4) {
-                    // connection closed confirmation
-                    leaveSuccess = true;
-                    synchronized (this) {
-                        notifyAll();
-                    }
-                } else {
-                    // channel info
-                    pool.submit(() -> GUI.writeInfo(infoHeader.getChannelID(),
-                            infoHeader.getMessageID(), infoHeader.getMessage()));
-                }
+                pool.submit(() -> handleInfo(infoHeader));
                 break;
             case OP_ACK:
               hio.processAckHeader((AckHeader) header, srcAddr);
@@ -155,6 +145,25 @@ public class Client implements Runnable {
         e.printStackTrace();
       }
 
+  }
+
+  public void handleInfo(InfoHeader infoHeader) {
+      long channelID = infoHeader.getChannelID();
+      switch (infoHeader.getInfoCode()) {
+          case 0: // user kicked
+              GUI.kickUser(channelID);
+          case 1: // mute user
+              GUI.setMuteStatus(channelID, true);
+          case 2: // unmute user
+              GUI.setMuteStatus(channelID, false);
+          case 3: // server message
+              GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
+          case 4: // closing connection
+              leaveSuccess = true;
+              synchronized (this) {
+                  notifyAll();
+              }
+      }
   }
 
   public void sendCommandHeader(long channelID, String command) {

@@ -15,6 +15,7 @@ public class ChannelPanel extends JPanel {
     private final long id;
     private final String channelName;
     private final String nick;
+    private boolean isMuted;
     private JTextArea chatArea;
     private JScrollPane scrollPane;
     private SortedSet<Message> messages;
@@ -35,6 +36,14 @@ public class ChannelPanel extends JPanel {
         this.channelName = channelName;
         this.setLayout(new BorderLayout());
         initWidgets();
+    }
+
+    public boolean isMuted() {
+        return this.isMuted;
+    }
+
+    public void setIsMuted(boolean status) {
+        isMuted = status;
     }
 
     /**

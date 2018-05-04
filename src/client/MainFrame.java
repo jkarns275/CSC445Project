@@ -85,7 +85,9 @@ public class MainFrame extends JFrame {
     private void sendMessage(String input) {
         // write packet
         ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
-        client.sendMessage(channel.getChannelID(), -1, channel.getNick(), input);
+        if (!channel.isMuted()) {
+            client.sendMessage(channel.getChannelID(), -1, channel.getNick(), input);
+        }
     }
 
     /**
@@ -168,6 +170,15 @@ public class MainFrame extends JFrame {
         });
     }
 
+    public void removeChannel(long channelID) {
+        for (int i = 0; i < channels.getTabCount(); i++) {
+            ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
+            if (channel.getChannelID() == channelID) {
+                channels.remove(channel);
+            }
+        }
+    }
+
     public void addMessageToChannel(long channelID, long messageID, String nick, String message) {
         for (int i = 0; i < channels.getTabCount(); i++) {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
@@ -185,4 +196,14 @@ public class MainFrame extends JFrame {
         client.sendErrorHeader((byte) 2, "No Such Channel");
     }
 
+    public void setMuteChannel(long channelID, boolean status) {
+
+        for (int i = 0; i < channels.getTabCount(); i++) {
+            ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
+            if (channel.getChannelID() == channelID) {
+                channel.setIsMuted(status);
+            }
+        }
+
+    }
 }
