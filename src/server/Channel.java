@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Channel {
-    final int MAX_BUFFERED_MESSAGES = 100;
+    final int MAX_BUFFERED_MESSAGES = 2048;
     public long channelID;
     private long msgID = 0;
     private long lastLoggedMsg = 0;
