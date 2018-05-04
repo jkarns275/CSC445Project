@@ -15,6 +15,7 @@ public class ChannelPanel extends JPanel {
     private final String nick;
     private JTextArea chatArea;
     private SortedSet<Message> messages;
+    private long firstMessageID = -1;
     //private JTextArea onlineUsers;
 
     /**
@@ -87,6 +88,7 @@ public class ChannelPanel extends JPanel {
      * @param message Content of the message
      */
     public void addMessage(long id, String name, String message) {
+        if (this.firstMessageID == -1) this.firstMessageID = id;
         messages.add(new Message(id, name, message));
         updateDisplay();
     }
@@ -94,12 +96,12 @@ public class ChannelPanel extends JPanel {
     public long[] validateOrdering() {
         long prev = messages.first().getId() - 1;
         for (Message message : messages) {
+            long mid = message.getId();
             if (prev + 1 != message.getId()) {
-                long[] result = { prev+1, message.getId() };
-                return result;
+              return new long[] { prev+1, message.getId() };
             }
+            prev = mid;
         }
-        System.out.println("");
         return new long[0];
     }
 

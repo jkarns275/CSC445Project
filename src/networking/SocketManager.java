@@ -69,7 +69,6 @@ public class SocketManager {
           for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
           final DatagramPacket received = new DatagramPacket(buffer, buffer.length);
           socket.receive(received);
-          System.out.println(received);
           final ByteInputStream bin = new ByteInputStream(received.getData(), received.getLength());
           final ObjectInputStream in = new ObjectInputStream(bin);
           final Header header = HeaderFactory.getInstance().readHeader(in);
@@ -94,7 +93,7 @@ public class SocketManager {
     throw new InterruptedException();
   }
 
-  void send(SocketRequest sr) throws InterruptedException {
+  public void send(SocketRequest sr) throws InterruptedException {
     if (this.toSend.offer(sr)) return;
     throw new InterruptedException();
   }

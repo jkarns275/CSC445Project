@@ -42,7 +42,6 @@ public class CommandWorker implements Runnable {
                     break;
 
                 case "mute":
-                    System.out.println(command[2]);
                     if (channel.users.get(command[2]) != null) {
                         System.out.println("User muted");
                         channel.users.get(command[2]).setMuted(true);

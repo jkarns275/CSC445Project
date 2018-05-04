@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Client implements Runnable {
 
@@ -29,6 +30,7 @@ public class Client implements Runnable {
   private final HeartbeatManager heartbeatManager;
   private final ExecutorService pool = Executors.newFixedThreadPool(CLIENT_PARALLELISM);
   private final int timeout = 2000;
+  private final AtomicBoolean shouldKill = new AtomicBoolean(false);
 
   // Maps (Channel ID) -> (Nickname for this client in that channel)
   private final ConcurrentHashMap<Long, String> channels = new ConcurrentHashMap<>();
@@ -55,6 +57,12 @@ public class Client implements Runnable {
     long last = System.nanoTime();
     for (;;)
       try {
+        if (shouldKill.get()) {
+          hio.shutdownNow();
+          pool.shutdown();
+          pool.awaitTermination(1, TimeUnit.SECONDS);
+        }
+
         nanoTime = System.nanoTime();
 
         this.hio.update();
@@ -83,28 +91,24 @@ public class Client implements Runnable {
           switch (header.opcode()) {
             case OP_WRITE:
               WriteHeader writeHeader = (WriteHeader) header;
+              if (writeHeader.getMsgID() == -1) break;
+
               // check if write response
               String username = this.channels.get(writeHeader.getChannelID());
               // If this client has a username for the channel this writeHeader is intended for,
               // the username the header specifies is the same as ours, and if we are waiting
               // for a writeHeader with the same magic value.
-              System.out.println("Received magic: " + writeHeader.getMagic() + " and have magic: " +
-                (!this.writeRecvQueue.isEmpty() ? this.writeRecvQueue.pollFirstEntry().getValue().second().getMagic() : 0xDEADBEEF));
-
               if (username != null && username.equals(writeHeader.getUsername()) &&
                   this.writeRecvQueue.containsKey(writeHeader.getMagic())) {
                 prevHeader = header;
                 this.writeRecvQueue.remove(writeHeader.getMagic());
               }
               // Display the message either way
-              System.out.println("Received message with message ID '" + writeHeader.getMsgID() + "'");
               pool.submit(() -> GUI.writeMessage( writeHeader.getChannelID(), writeHeader.getMsgID(),
                                                   writeHeader.getUsername(), writeHeader.getMsg()));
 
               break;
-            case OP_JOIN:       break;
-            case OP_LEAVE:      break;
-            case OP_SOURCE:
+           case OP_SOURCE:
                 prevHeader =  header;
                 sourceReceived = true;
                 SourceHeader sourceHeader = (SourceHeader) header;
@@ -115,9 +119,7 @@ public class Client implements Runnable {
                     notifyAll();
                 }
                 break;
-            case OP_NAK:        break;
-            case OP_ERROR:      break;
-            case OP_HEARTBEAT:
+           case OP_HEARTBEAT:
               HeartbeatHeader heartbeatHeader = (HeartbeatHeader) header;
               this.heartbeatManager.processHeartbeat(heartbeatHeader.getChannelID(), srcAddr);
               break;
@@ -135,11 +137,16 @@ public class Client implements Runnable {
                             infoHeader.getMessageID(), infoHeader.getMessage()));
                 }
                 break;
-            case OP_COMMAND:    break;
-            case OP_CONG:       break;
             case OP_ACK:
               hio.processAckHeader((AckHeader) header, srcAddr);
               break;
+
+            case OP_NAK:
+            case OP_JOIN:
+            case OP_LEAVE:
+            case OP_ERROR:
+            case OP_COMMAND:
+            case OP_CONG:
             default:
               System.err.println("Received header from server with invalid opcode: " + header.opcode());
           }
@@ -218,6 +225,15 @@ public class Client implements Runnable {
           e.printStackTrace();
           return false;
       }
+  }
+
+  public void kill() {
+    this.shouldKill.set(true);
+    try {
+      Thread.sleep(250, 0);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   public synchronized Void sendMessage(long channelID, long messageID, String nick, String message) {

@@ -3,6 +3,7 @@ package server;
 import networking.MulticastPacketSender;
 import networking.PacketSender;
 import networking.headers.Header;
+import networking.headers.WriteHeader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -122,13 +123,17 @@ public class Channel {
         this.bufferedMessages.remove(msgID);
     }
 
-    public synchronized BufferedMessageEntry getFromBufferedTreeMap(Long msgID) {
+    public synchronized boolean hasMessage(long msgID) {
+      return this.bufferedMessages.containsKey(msgID);
+    }
+
+    public synchronized BufferedMessageEntry getMessage(long msgID) {
         return this.bufferedMessages.get(msgID);
     }
 
     public class BufferedMessageEntry implements Comparable<BufferedMessageEntry> {
         Header header;
-        Long militime;
+        long militime;
 
         BufferedMessageEntry(Header header) {
             this.header = header;
@@ -137,7 +142,7 @@ public class Channel {
 
         public Header getHeader() { return header; }
 
-        public Long getMilitime() { return militime; }
+        public long getMilitime() { return militime; }
 
         @Override
         public int compareTo(BufferedMessageEntry messageEntry) {

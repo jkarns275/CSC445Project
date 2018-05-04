@@ -88,11 +88,6 @@ public class HeaderIOManager {
 //      System.out.println("Received ack for " + ackHeader);
       ArrayBlockingQueue<InetSocketAddress> queue = this.ackQueues.get(ackHeader);
       queue.put(source);
-    } else {
-      System.out.println(ackHeader.getBody());
-      for (AckHeader h : this.ackQueues.keySet()) {
-        System.out.println("    " + h.getBody() + ", " + h.equals(ackHeader) + ", " + (h.getBody().equals(ackHeader.getBody())));
-      }
     }
   }
 

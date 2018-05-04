@@ -24,7 +24,6 @@ public class WriteWorker implements Runnable {
             if (channel.users.get(writeHeader.getUsername()).getMuted()) return;
             writeHeader.setMsgID(channel.getAndIncrementMsgID());
             channel.addToBufferedTreeMap(writeHeader.getMsgID(), writeHeader);
-            System.out.println(writeHeader.getMsg());
             channel.sendPacket(writeHeader);
         } else {
             ErrorHeader header = new ErrorHeader((byte)0x02,"No such channel exists");

@@ -20,6 +20,7 @@ public class MainFrame extends JFrame {
     private ChannelPanel messagePanel;
     private JTextField input;
     private Client client;
+    private Thread clientThread;
 
     /**
      * Constructor for MainFrame class.
@@ -53,10 +54,23 @@ public class MainFrame extends JFrame {
         this.add(input, BorderLayout.SOUTH);
     }
 
+    private boolean disconnect() {
+      if (client != null) {
+        this.client.kill();
+        this.client = null;
+        return false;
+      }
+      return false;
+    }
+
     private boolean connect(String hostname, int hostport, int clientport) {
+      if (client != null) {
+        this.client.kill();
+      }
         try {
             this.client = new Client(new InetSocketAddress(hostname, hostport), clientport);
-            new Thread(client).start();
+            clientThread = new Thread(client);
+            clientThread.start();
             return true;
         } catch (IOException e) {
             e.printStackTrace();
