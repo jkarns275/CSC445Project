@@ -55,7 +55,7 @@ public class Client implements Runnable {
   @Override
   public void run() {
     long last = System.nanoTime();
-    for (;;)
+    for (;;) {
       try {
         if (shouldKill.get()) {
           hio.shutdownNow();
@@ -144,6 +144,7 @@ public class Client implements Runnable {
     } catch (InterruptedException e) {
         e.printStackTrace();
       }
+    }
 
   }
 

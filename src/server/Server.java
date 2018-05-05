@@ -111,7 +111,8 @@ public class Server {
                 heartbeatManager.clean();
                 for (Channel channel : channels.values()) channel.update();
                 SocketRequest receive;
-                while ((receive = headerManager.recv()) != null) {
+                int packetsRead = 0;
+                while ((receive = headerManager.recv()) != null && packetsRead++ < 16) {
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
 

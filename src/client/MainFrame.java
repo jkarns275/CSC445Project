@@ -21,13 +21,15 @@ public class MainFrame extends JFrame {
     private JTextField input;
     private Client client;
     private Thread clientThread;
+    private GridBagLayout gridBagLayout;
 
     /**
      * Constructor for MainFrame class.
      */
     public MainFrame() {
         super();
-        this.getContentPane().setLayout(new BorderLayout());
+        gridBagLayout = new GridBagLayout();
+        this.getContentPane().setLayout(gridBagLayout);
         initWidgets();
         this.setTitle("Chat");
         this.setSize(800, 600);
@@ -40,10 +42,29 @@ public class MainFrame extends JFrame {
      */
     private void initWidgets() {
         channels = new JTabbedPane();
-        this.add(channels, BorderLayout.CENTER);
+        GridBagConstraints channelsConstraints = new GridBagConstraints();
+        channelsConstraints.gridwidth = 7;
+        channelsConstraints.gridheight = 6;
+        channelsConstraints.gridx = 0;
+        channelsConstraints.gridy = 0;
+        channelsConstraints.anchor = GridBagConstraints.NORTHWEST;
+        channelsConstraints.weighty = 1;
+        channelsConstraints.weightx = 1;
+        channelsConstraints.fill = GridBagConstraints.BOTH;
+        //channelsConstraints.fill = GridBagConstraints.BOTH;
+        this.add(channels, channelsConstraints);
 
         messagePanel = new ChannelPanel(-1, "*MSG*", "");
-        channels.addTab(messagePanel.getChannelName(), messagePanel);
+        GridBagConstraints messagePanelConstraints = new GridBagConstraints();
+        messagePanelConstraints.gridx = 7;
+        messagePanelConstraints.gridy = 0;
+        messagePanelConstraints.gridheight = 1;
+        messagePanelConstraints.gridwidth = 2;
+        messagePanelConstraints.anchor = GridBagConstraints.NORTHEAST;
+        messagePanelConstraints.weightx = 1;
+        messagePanelConstraints.weighty = 2;
+        messagePanelConstraints.fill = GridBagConstraints.BOTH;
+        this.add(messagePanel, messagePanelConstraints);
 
         input = new JTextField();
         input.addActionListener(e -> {
@@ -51,7 +72,14 @@ public class MainFrame extends JFrame {
             input.setText("");
         });
         //input.setPreferredSize(new Dimension(800, 10));
-        this.add(input, BorderLayout.SOUTH);
+        GridBagConstraints inputConstraints = new GridBagConstraints();
+        inputConstraints.gridwidth = 6;
+        inputConstraints.gridheight = 2;
+        inputConstraints.gridy = 6;
+        inputConstraints.gridx = 0;
+        inputConstraints.anchor = GridBagConstraints.SOUTHWEST;
+        inputConstraints.fill = GridBagConstraints.HORIZONTAL;
+        this.add(input, inputConstraints);
     }
 
     private boolean disconnect() {
@@ -85,7 +113,7 @@ public class MainFrame extends JFrame {
     private void sendMessage(String input) {
         // write packet
         ChannelPanel channel = (ChannelPanel) channels.getSelectedComponent();
-        if (!channel.isMuted()) {
+        if (channel != null && !channel.isMuted()) {
             client.sendMessage(channel.getChannelID(), -1, channel.getNick(), input);
         }
     }

@@ -8,6 +8,7 @@ import server.Server;
 import server.User;
 
 import java.net.InetSocketAddress;
+import java.util.Optional;
 
 public class LeaveWorker implements Runnable {
     LeaveHeader leaveHeader;
@@ -20,14 +21,20 @@ public class LeaveWorker implements Runnable {
 
     public void run() {
         Channel channel = Server.channels.get(leaveHeader.channelID);
-        for (User user : channel.users.values()) {
-            if (user.address.getAddress().equals(address.getAddress())) {
-                channel.removeUser(user);
-                break;
-            }
-        }
+        String userNickname = channel.users.values().stream()
+          .filter((User u) -> u.address.equals(address)).findAny()
+          .map(u -> u.username)
+          .orElse("Mystery");
+
         InfoHeader infoHeader = new InfoHeader(leaveHeader.channelID, (byte) 0x04, 0,
-                "Connection to channel " + leaveHeader.channelID + " successfully closed");
-        channel.sendPacket(infoHeader,address);
+                "User " + userNickname + " has left.");
+
+        Optional<User> user = channel.users.values().stream()
+          .filter(u -> u.address.getAddress().equals(address.getAddress()))
+          .findFirst();
+
+        user.ifPresent(channel::removeUser);
+
+        channel.sendPacket(infoHeader);
     }
 }
