@@ -45,8 +45,7 @@ public class Server {
 
     private Server(int port) throws IOException {
         this.init();
-        headerManager = new HeaderIOManager(new InetSocketAddress(InetAddress.getByAddress(new byte[]{ 0,0,0,0 }),
-          port),15);
+        headerManager = new HeaderIOManager(new InetSocketAddress(InetAddress.getLocalHost(), port),15);
         heartbeatManager = new HeartbeatManager();
     }
 
