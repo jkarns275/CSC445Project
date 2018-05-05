@@ -32,25 +32,27 @@ public class CommandWorker implements Runnable {
             channel.sendPacket(commandHeader, address);
 
         } else if (command[0].equals("/op")) {
+            User user;
             switch(command[1]) {
                 case "kick":
-                    User kickedUser = channel.users.remove(command[2]);
+                    user = channel.users.remove(command[2]);
                     msgID = channel.getAndIncrementMsgID();
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x00, msgID, "User, " + command[2]
                             + ", kicked from channel, " + channel.channelID + ".");
                     channel.addToBufferedTreeMap(msgID, infoHeader);
-                    channel.sendPacket(infoHeader, kickedUser.address);
+                    channel.sendPacket(infoHeader, user.address);
                     break;
 
                 case "mute":
-                    if (channel.users.get(command[2]) != null) {
+                    user = channel.users.get(command[2]);
+                    if (user != null) {
                         System.out.println("User muted");
-                        channel.users.get(command[2]).setMuted(true);
+                        user.setMuted(true);
                         msgID = channel.getAndIncrementMsgID();
                         infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]
                                 + ", muted in channel, " + channel.channelID + ".");
                         channel.addToBufferedTreeMap(msgID, infoHeader);
-                        channel.sendPacket(infoHeader, address);
+                        channel.sendPacket(infoHeader, user.address);
                     } else {
                         System.out.println("Null");
                         ErrorHeader errorHeader = new ErrorHeader(ERROR_NO_SUCH_USER, "User " + command[2]
@@ -60,12 +62,13 @@ public class CommandWorker implements Runnable {
                     break;
 
                 case "unmute":
-                    channel.users.get(command[2]).setMuted(false);
+                    user = channel.users.get(command[2]);
+                    user.setMuted(false);
                     msgID = channel.getAndIncrementMsgID();
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x02, msgID, "User, " + command[2]
                             + ", unmuted in channel, " + channel.channelID + ".");
                     channel.addToBufferedTreeMap(msgID, infoHeader);
-                    channel.sendPacket(infoHeader, address);
+                    channel.sendPacket(infoHeader, user.address);
                     break;
 
                 default:
