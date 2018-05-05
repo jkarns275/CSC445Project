@@ -1,15 +1,11 @@
 package networking;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import networking.headers.AckHeader;
 import common.Constants;
 import networking.headers.Header;
 import networking.headers.HeaderFactory;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 
@@ -46,7 +42,7 @@ public class SocketManager {
 
       for (;;) {
         try {
-          final ByteOutputStream bout = new ByteOutputStream(Constants.MAX_HEADER_SIZE);
+          final ByteArrayOutputStream bout = new ByteArrayOutputStream(Constants.MAX_HEADER_SIZE);
           final ObjectOutputStream out = new ObjectOutputStream(bout);
           for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
           final SocketRequest job = toSend.poll(0, TimeUnit.MILLISECONDS);
@@ -56,7 +52,7 @@ public class SocketManager {
             job.getHeader().writeObject(out);
             out.close();
 
-            final DatagramPacket toSend = new DatagramPacket(bout.getBytes(), bout.getCount());
+            final DatagramPacket toSend = new DatagramPacket(bout.toByteArray(), bout.size());
             toSend.setSocketAddress(job.getAddress());
             socket.send(toSend);
           }
@@ -69,7 +65,8 @@ public class SocketManager {
           for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
           final DatagramPacket received = new DatagramPacket(buffer, buffer.length);
           socket.receive(received);
-          final ByteInputStream bin = new ByteInputStream(received.getData(), received.getLength());
+          final ByteArrayInputStream bin = new ByteArrayInputStream(received.getData(), received.getOffset(), received
+            .getLength());
           final ObjectInputStream in = new ObjectInputStream(bin);
           final Header header = HeaderFactory.getInstance().readHeader(in);
           final InetSocketAddress src = new InetSocketAddress(received.getAddress(), received.getPort());

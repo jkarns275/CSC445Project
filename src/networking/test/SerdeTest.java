@@ -1,11 +1,11 @@
 package networking.test;
 
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream;
 import common.Constants;
 import networking.SocketRequest;
 import networking.headers.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
@@ -46,13 +46,13 @@ public class SerdeTest {
     testHeaders.add(congHeader);
 
     for (Header header : testHeaders) {
-      final ByteOutputStream bout = new ByteOutputStream(Constants.MAX_HEADER_SIZE);
+      final ByteArrayOutputStream bout = new ByteArrayOutputStream(Constants.MAX_HEADER_SIZE);
       final ObjectOutputStream out = new ObjectOutputStream(bout);
 
       header.writeObject(out);
       out.close();
 
-      final ByteInputStream bin = new ByteInputStream(bout.getBytes(), bout.getCount());
+      final ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray(), 0, bout.size());
       final ObjectInputStream in = new ObjectInputStream(bin);
       final Header deserialized = HeaderFactory.getInstance().readHeader(in);
       if (!deserialized.equals(header)) {
