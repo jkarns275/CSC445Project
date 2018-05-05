@@ -21,6 +21,14 @@ public class GUI {
         getInstance().addMessageToChannel(channelID, messageID, infoNick, message);
     }
 
+    public static void kickUser(long channelID) {
+        getInstance().removeChannel(channelID);
+    }
+
+    public static void setMuteStatus(long channelID, boolean status) {
+        getInstance().setMuteChannel(channelID, status);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GUI::getInstance);
     }
