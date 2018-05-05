@@ -46,7 +46,7 @@ public class Client implements Runnable {
   public Client(InetSocketAddress server, int port) throws IOException {
 
     this.port = port; this.server = server;
-    this.hio = new HeaderIOManager(new InetSocketAddress(InetAddress.getLocalHost(), port), 8);
+    this.hio = new HeaderIOManager(new InetSocketAddress(port), 8);
     this.socket = this.hio.getSocket();
     this.heartbeatSender = new HeartbeatSender(this.socket, server);
     this.heartbeatManager = new HeartbeatManager();
