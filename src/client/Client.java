@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Client implements Runnable {
 
   private static final int CLIENT_PARALLELISM = 4;
-  private static final long HEARTBEAT_MANAGER_CLEAN_DELAY = 20 * Constants.SECONDS_TO_NANOS;
+  private static final long HEARTBEAT_MANAGER_CLEAN_DELAY = 2 * Constants.SECONDS_TO_NANOS;
   private static final int WRITE_TIMEOUT = 5;
 
   private final int port;
