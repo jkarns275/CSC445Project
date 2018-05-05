@@ -5,6 +5,7 @@ import networking.headers.ErrorHeader;
 import networking.headers.InfoHeader;
 import server.Channel;
 import server.Server;
+import server.User;
 
 import java.net.InetSocketAddress;
 
@@ -33,12 +34,12 @@ public class CommandWorker implements Runnable {
         } else if (command[0].equals("/op")) {
             switch(command[1]) {
                 case "kick":
-                    channel.users.remove(command[2]);
+                    User kickedUser = channel.users.remove(command[2]);
                     msgID = channel.getAndIncrementMsgID();
                     infoHeader = new InfoHeader(channel.channelID, (byte) 0x00, msgID, "User, " + command[2]
                             + ", kicked from channel, " + channel.channelID + ".");
                     channel.addToBufferedTreeMap(msgID, infoHeader);
-                    channel.sendPacket(infoHeader, address);
+                    channel.sendPacket(infoHeader, kickedUser.address);
                     break;
 
                 case "mute":
