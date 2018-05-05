@@ -43,7 +43,7 @@ public class MainFrame extends JFrame {
     private void initWidgets() {
         channels = new JTabbedPane();
         GridBagConstraints channelsConstraints = new GridBagConstraints();
-        channelsConstraints.gridwidth = 7;
+        channelsConstraints.gridwidth = 6;
         channelsConstraints.gridheight = 6;
         channelsConstraints.gridx = 0;
         channelsConstraints.gridy = 0;
@@ -56,9 +56,9 @@ public class MainFrame extends JFrame {
 
         messagePanel = new ChannelPanel(-1, "*MSG*", "");
         GridBagConstraints messagePanelConstraints = new GridBagConstraints();
-        messagePanelConstraints.gridx = 7;
+        messagePanelConstraints.gridx = 6;
         messagePanelConstraints.gridy = 0;
-        messagePanelConstraints.gridheight = 1;
+        messagePanelConstraints.gridheight = 6;
         messagePanelConstraints.gridwidth = 2;
         messagePanelConstraints.anchor = GridBagConstraints.NORTHEAST;
         messagePanelConstraints.weightx = 1;
@@ -78,7 +78,7 @@ public class MainFrame extends JFrame {
         inputConstraints.gridy = 6;
         inputConstraints.gridx = 0;
         inputConstraints.anchor = GridBagConstraints.SOUTHWEST;
-        inputConstraints.fill = GridBagConstraints.HORIZONTAL;
+        inputConstraints.fill = GridBagConstraints.BOTH;
         this.add(input, inputConstraints);
     }
 

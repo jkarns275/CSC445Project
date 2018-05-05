@@ -26,15 +26,15 @@ public class LeaveWorker implements Runnable {
           .map(u -> u.username)
           .orElse("Mystery");
 
-        InfoHeader infoHeader = new InfoHeader(leaveHeader.channelID, (byte) 0x04, 0,
+        InfoHeader infoHeader = new InfoHeader(leaveHeader.channelID, (byte) InfoHeader.INFO_CLOSED, 0,
                 "User " + userNickname + " has left.");
+
+        channel.sendPacket(infoHeader);
 
         Optional<User> user = channel.users.values().stream()
           .filter(u -> u.address.getAddress().equals(address.getAddress()))
           .findFirst();
 
         user.ifPresent(channel::removeUser);
-
-        channel.sendPacket(infoHeader);
     }
 }

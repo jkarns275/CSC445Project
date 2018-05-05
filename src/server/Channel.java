@@ -9,9 +9,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class Channel {
     final int MAX_BUFFERED_MESSAGES = 2048;
@@ -67,9 +69,11 @@ public class Channel {
      *
      */
     public void sendPacket(Header header) {
-        ArrayList<InetSocketAddress> addresses = new ArrayList<>();
-        for (User user : users.values()) addresses.add(user.address);
-        MulticastPacketSender packetSender = (MulticastPacketSender) Server.headerManager.multicastPacketSender(header,addresses);
+        MulticastPacketSender packetSender = (MulticastPacketSender) Server.headerManager.multicastPacketSender(
+          header,users.values().stream()
+            .map(u -> u.address)
+            .collect(Collectors.toCollection(ArrayList::new))
+        );
         packetSender.run();
     }
 

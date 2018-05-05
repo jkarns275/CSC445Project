@@ -11,7 +11,7 @@ import java.util.TreeSet;
  */
 class HeartbeatReceiver {
 
-  public static int HEARTBEAT_MAX = 20;
+  public static int HEARTBEAT_MAX = 1;
 
   private class Client implements Comparable<Client> {
     public InetSocketAddress address;

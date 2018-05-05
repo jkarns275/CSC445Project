@@ -2,6 +2,7 @@ package server.workers;
 
 import networking.PacketSender;
 import networking.headers.ErrorHeader;
+import networking.headers.InfoHeader;
 import networking.headers.JoinHeader;
 import networking.headers.SourceHeader;
 import server.Channel;
@@ -42,6 +43,8 @@ public class JoinWorker implements Runnable {
                 SourceHeader sourceHeader = new SourceHeader(channel.channelID, channel.channelName, assignedUsername);
                 PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(sourceHeader,address);
                 packetSender.run();
+                InfoHeader info = new InfoHeader(channel.channelID, InfoHeader.INFO_SERVER_MSG, -1,
+                  "User " + assignedUsername + " has joined.");
                 break;
             }
         }
