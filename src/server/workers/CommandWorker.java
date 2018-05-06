@@ -38,6 +38,7 @@ public class CommandWorker implements Runnable {
               case "kick":
                 user = channel.users.remove(command[2]);
                 msgID = channel.getAndIncrementMsgID();
+                channel.incrementLastLoggedMsg(1);
                 infoHeader = new InfoHeader(channel.channelID, (byte) 0x00, msgID, "User, " + command[2]
                   + ", kicked from channel, " + channel.channelID + ".");
                 channel.sendPacket(infoHeader, user.address);
@@ -54,6 +55,7 @@ public class CommandWorker implements Runnable {
                   System.out.println("User muted");
                   user.setMuted(true);
                   msgID = channel.getAndIncrementMsgID();
+                  channel.incrementLastLoggedMsg(1);
                   infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]
                     + ", muted in channel, " + channel.channelID + ".");
                   channel.sendPacket(infoHeader, user.address);
@@ -73,6 +75,7 @@ public class CommandWorker implements Runnable {
                 user = channel.users.get(command[2]);
                 user.setMuted(false);
                 msgID = channel.getAndIncrementMsgID();
+                channel.incrementLastLoggedMsg(1);
                 infoHeader = new InfoHeader(channel.channelID, (byte) 0x02, msgID, "User, " + command[2]
                   + ", unmuted in channel, " + channel.channelID + ".");
                 channel.sendPacket(infoHeader, user.address);
