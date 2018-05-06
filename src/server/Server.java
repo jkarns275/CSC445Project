@@ -165,8 +165,6 @@ public class Server {
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             }
         }
     }

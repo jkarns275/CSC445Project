@@ -153,18 +153,23 @@ public class Client implements Runnable {
       switch (infoHeader.getInfoCode()) {
           case 0: // user kicked
               GUI.kickUser(channelID);
+              break;
           case 1: // mute user
               GUI.setMuteStatus(channelID, true);
+              break;
           case 2: // unmute user
               GUI.setMuteStatus(channelID, false);
+              break;
           case 3: // server message
-              GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
+              //GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
+              break;
           case 4: // closing connection
               leaveSuccess = true;
               synchronized (this) {
                   notifyAll();
               }
       }
+      GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
   }
 
   public void sendCommandHeader(long channelID, String command) {

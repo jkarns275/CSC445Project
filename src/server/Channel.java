@@ -62,7 +62,9 @@ public class Channel {
      *
      */
     public synchronized void removeUser(User user) {
+        System.out.println("Removing " + user.username);
         users.remove(user.username);
+        usernames.remove(user.username);
     }
 
     /*
@@ -75,6 +77,7 @@ public class Channel {
             .collect(Collectors.toCollection(ArrayList::new))
         );
         packetSender.run();
+        System.out.println("Howdy");
     }
 
     public void sendPacket(Header header, InetSocketAddress address) {
@@ -94,12 +97,12 @@ public class Channel {
         lastLoggedMsg += increment;
     }
 
-    public void update() throws FileNotFoundException {
+    public void update() {
         if (lastLoggedMsg != msgID) {
 //            PrintWriter pw = new PrintWriter(log);
             for (long index = lastLoggedMsg+1; index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
-                System.err.printf("[" + e.militime + "] " + e.header.toString());
+                System.err.println("[" + e.militime + "] " + e.header);
 //                pw.println("[" + e.militime + "] " + e.header.toString());
                 lastLoggedMsg = index;
             }

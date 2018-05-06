@@ -26,7 +26,7 @@ public class LeaveWorker implements Runnable {
           .map(u -> u.username)
           .orElse("Mystery");
 
-        InfoHeader infoHeader = new InfoHeader(leaveHeader.channelID, (byte) InfoHeader.INFO_CLOSED, 0,
+        InfoHeader infoHeader = new InfoHeader(leaveHeader.channelID, (byte) InfoHeader.INFO_CLOSED, channel.getAndIncrementMsgID(),
                 "User " + userNickname + " has left.");
 
         channel.sendPacket(infoHeader);
