@@ -25,6 +25,11 @@ public class HeaderIOManager {
 
   private final SocketManager socket;
 
+  // If the last packet the SocketManager tried to send wasn't successfully sent, it probably isn't connected
+  public boolean probablyConnected() {
+    return socket.probablyConnected();
+  }
+
   public HeaderIOManager(InetSocketAddress address, int parallelism) throws IOException {
     pool = new ThreadPoolExecutor(parallelism, parallelism, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
     socket = new SocketManager(address, pool);

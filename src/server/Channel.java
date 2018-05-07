@@ -1,18 +1,17 @@
 package server;
 
+import jdk.nashorn.internal.runtime.options.Option;
 import networking.MulticastPacketSender;
 import networking.PacketSender;
 import networking.headers.Header;
+import networking.headers.InfoHeader;
 import networking.headers.WriteHeader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Channel {
@@ -25,6 +24,7 @@ public class Channel {
     private File log;
     public HashMap<String, User> users = new HashMap<>();
     private ArrayList<String> usernames = new ArrayList<>();
+    private ArrayList<User> usersToPurge = new ArrayList<>();
 
     /*
      * TreeMap buffering messages sent from the server to clients in the given channel.
@@ -62,7 +62,10 @@ public class Channel {
      *
      */
     public synchronized void removeUser(User user) {
-        System.out.println("Removing " + user.username);
+        if (!users.isEmpty())
+          this.sendPacket(new InfoHeader(channelID, InfoHeader.INFO_SERVER_MSG, this
+            .getAndIncrementMsgID(),
+        "User '" + user.username + "' has left."));
         users.remove(user.username);
         usernames.remove(user.username);
     }
@@ -77,7 +80,6 @@ public class Channel {
             .collect(Collectors.toCollection(ArrayList::new))
         );
         packetSender.run();
-        System.out.println("Howdy");
     }
 
     public void sendPacket(Header header, InetSocketAddress address) {
@@ -97,12 +99,13 @@ public class Channel {
         lastLoggedMsg += increment;
     }
 
-    public void update() {
+    public void update(HashSet<InetSocketAddress> heartbeatClients) {
         if (lastLoggedMsg != msgID) {
 //            PrintWriter pw = new PrintWriter(log);
-            for (long index = lastLoggedMsg+1; index != msgID; index++) {
+            for (long index = bufferedMessages.firstKey(); index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
-                System.err.println("[" + e.militime + "] " + e.header);
+                if (e == null) break;
+                //System.err.println("[" + e.militime + "] " + e.header);
 //                pw.println("[" + e.militime + "] " + e.header.toString());
                 lastLoggedMsg = index;
             }
@@ -113,6 +116,11 @@ public class Channel {
             bufferedMessages.remove(i);
           }
         }
+        usersToPurge.clear();
+        users.forEach((_nickname, user) -> {
+          if (!heartbeatClients.contains(user.address)) usersToPurge.add(user);
+        });
+        for (User user: usersToPurge) removeUser(user);
     }
 
     public synchronized void log(Long msgID, Header header) throws FileNotFoundException {
@@ -153,5 +161,6 @@ public class Channel {
         public int compareTo(BufferedMessageEntry messageEntry) {
             return (int) (this.militime - messageEntry.militime);
         }
+
     }
 }

@@ -63,6 +63,12 @@ public class Client implements Runnable {
           pool.awaitTermination(1, TimeUnit.SECONDS);
         }
 
+        if (!this.hio.probablyConnected()) {
+          channels.forEach((channelID, _nickname) -> {
+            this.leaveChannel(channelID);
+          });
+        }
+
         nanoTime = System.nanoTime();
 
         this.hio.update();
@@ -131,10 +137,13 @@ public class Client implements Runnable {
               hio.processAckHeader((AckHeader) header, srcAddr);
               break;
 
+            case OP_ERROR:
+              System.out.println("Received error header from server with error message \"" + ((ErrorHeader) header)
+                .getErrorMsg());
+              break;
             case OP_NAK:
             case OP_JOIN:
             case OP_LEAVE:
-            case OP_ERROR:
             case OP_COMMAND:
             case OP_CONG:
             default:
@@ -205,7 +214,7 @@ public class Client implements Runnable {
   }
 
   public boolean isServerAlive() {
-    Optional<ArrayList<InetSocketAddress>> result = heartbeatManager.getActiveClients(Constants.CLIENT_HEARTBEAT_CHANNEL);
+    Optional<HashSet<InetSocketAddress>> result = heartbeatManager.getActiveClients(Constants.CLIENT_HEARTBEAT_CHANNEL);
     return result.isPresent() && result.get().size() > 0;
   }
 

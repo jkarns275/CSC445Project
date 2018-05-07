@@ -11,7 +11,7 @@ import java.util.TreeSet;
  */
 class HeartbeatReceiver {
 
-  public static int HEARTBEAT_MAX = 1;
+  public static int HEARTBEAT_MAX = 8;
 
   private class Client implements Comparable<Client> {
     public InetSocketAddress address;
@@ -61,6 +61,8 @@ class HeartbeatReceiver {
     // Remove all invalid clients.
     while(!leastRecentHeartbeat.isEmpty()) {
       c = leastRecentHeartbeat.first();
+      long timedif = Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond();
+      System.out.println("Time diff: " + timedif);
       if (c != null && Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond() > HEARTBEAT_MAX) {
         c = leastRecentHeartbeat.pollFirst();
         clients.remove(c.address);

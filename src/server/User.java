@@ -20,4 +20,9 @@ public class User {
     public boolean getMuted() {
         return muted;
     }
+
+    @Override
+    public String toString() {
+      return "<" + this.username + "; " + this.address + "; " + muted + ">";
+    }
 }

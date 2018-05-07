@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 import static common.Constants.*;
@@ -63,11 +65,13 @@ public class Server {
      *
      */
     private void init() {
+      /*
         String[] names = {"Channel1","Channel2","Channel3"};
         long[] ids = {1, 2, 3};
         for (int i = 0; i < names.length; i++) {
             channels.put(ids[i],new Channel(names[i],ids[i]));
         }
+        */
     }
 
     public static Channel getChannel(Long channelID) {
@@ -109,7 +113,10 @@ public class Server {
                 headerManager.update();
                 heartbeatManager.update();
                 heartbeatManager.clean();
-                for (Channel channel : channels.values()) channel.update();
+                for (Channel channel : channels.values()) {
+                  Optional<HashSet<InetSocketAddress>> clients = heartbeatManager.getActiveClients(channel.channelID);
+                  channel.update(clients.orElse(new HashSet<>()));
+                }
                 SocketRequest receive;
                 int packetsRead = 0;
                 while ((receive = headerManager.recv()) != null && packetsRead++ < 16) {

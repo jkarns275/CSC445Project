@@ -8,6 +8,7 @@ import networking.headers.HeaderFactory;
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SocketManager {
   // All opcodes will be considered 'Ackable' for now.
@@ -18,6 +19,8 @@ public class SocketManager {
   private final DatagramSocket socket;
   private final LinkedBlockingQueue<SocketRequest> receivedItems = new LinkedBlockingQueue<>(1024);
   private final LinkedBlockingQueue<SocketRequest> toSend = new LinkedBlockingQueue<>(1024);
+
+  AtomicBoolean lastSendWasSuccessfull = new AtomicBoolean(true);
 
   public SocketManager(int port, ThreadPoolExecutor pool) throws IOException {
     socket = new DatagramSocket(port);
@@ -55,8 +58,10 @@ public class SocketManager {
             final DatagramPacket toSend = new DatagramPacket(bout.toByteArray(), bout.size());
             toSend.setSocketAddress(job.getAddress());
             socket.send(toSend);
+            this.lastSendWasSuccessfull.set(true);
           }
         } catch (InterruptedException | SocketTimeoutException ignored) {
+          this.lastSendWasSuccessfull.set(false);
         } catch (Exception e) {
           System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
@@ -100,4 +105,7 @@ public class SocketManager {
     return this.receivedItems.poll(100, TimeUnit.MILLISECONDS);
   }
 
+  public boolean probablyConnected() {
+    return this.lastSendWasSuccessfull.get();
+  }
 }

@@ -26,6 +26,7 @@ public class WriteWorker implements Runnable {
             channel.addToBufferedTreeMap(writeHeader.getMsgID(), writeHeader);
             channel.sendPacket(writeHeader);
         } else {
+            System.out.println("Channel is null");
             ErrorHeader header = new ErrorHeader((byte)0x02,"No such channel exists");
             PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
             packetSender.run();

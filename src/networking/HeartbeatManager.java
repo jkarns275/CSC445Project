@@ -1,9 +1,7 @@
 package networking;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.*;
 
 public class HeartbeatManager {
 
@@ -39,10 +37,10 @@ public class HeartbeatManager {
     }
   }
 
-  public Optional<ArrayList<InetSocketAddress>> getActiveClients(long channelID) {
+  public Optional<HashSet<InetSocketAddress>> getActiveClients(long channelID) {
     HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
     if (heartbeatReceiver != null) {
-      return Optional.of(new ArrayList<InetSocketAddress>(heartbeatReceiver.getClients()));
+      return Optional.of(new HashSet<InetSocketAddress>(heartbeatReceiver.getClients()));
     } else {
       return Optional.empty();
     }
