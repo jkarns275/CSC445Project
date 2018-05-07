@@ -1,6 +1,5 @@
 package server.workers;
 
-import networking.headers.ErrorHeader;
 import networking.headers.InfoHeader;
 import networking.headers.LeaveHeader;
 import server.Channel;

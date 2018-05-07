@@ -4,7 +4,6 @@ import networking.HeaderIOManager;
 import networking.PacketSender;
 import networking.SocketRequest;
 import networking.headers.NakHeader;
-import networking.headers.SourceHeader;
 import networking.headers.WriteHeader;
 import server.Channel;
 import server.Server;
@@ -57,15 +56,13 @@ public class NakTest {
         for (;;) {
             while ((receive = clientHeaderManager.recv()) != null) {
                 int opcode = receive.getHeader().opcode();
-                System.out.println(opcode);
 
                 if (opcode == OP_WRITE) {
-
                     boolean msgid = false;
                     boolean msgcontents = false;
 
                     WriteHeader writeHeader = (WriteHeader) receive.getHeader();
-                    System.out.println("Received a write header with fields: ");
+                    System.out.println("\nReceived a write header with fields: ");
                     System.out.println(" -User name: " + writeHeader.getUsername());
                     System.out.println(" -Channel id: " + writeHeader.getChannelID());
                     System.out.println(" -MsgID: " + writeHeader.getMsgID());

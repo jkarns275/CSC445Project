@@ -3,7 +3,7 @@ package server.test;
 import networking.HeaderIOManager;
 import networking.PacketSender;
 import networking.SocketRequest;
-import networking.headers.ErrorHeader;
+import networking.headers.InfoHeader;
 import networking.headers.LeaveHeader;
 import server.Channel;
 import server.Server;
@@ -15,7 +15,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static common.Constants.OP_ERROR;
+import static common.Constants.OP_INFO;
 
 public class LeaveTest {
     public static InetSocketAddress serverAddress = new InetSocketAddress("localhost",2703);
@@ -24,7 +24,7 @@ public class LeaveTest {
     public static void main(String[] args) throws IOException, InterruptedException {
         LeaveTest leaveTest = new LeaveTest();
         if (!leaveTest.leaveTest()) {
-            System.out.println("Failed test: joinTwiceTest");
+            System.out.println("Failed test: leaveTest");
         }
         System.exit(0);
     }
@@ -49,23 +49,24 @@ public class LeaveTest {
             while ((receive = clientHeaderManager.recv()) != null) {
                 int opcode = receive.getHeader().opcode();
 
-                if (opcode == OP_ERROR) {
+                if (opcode == OP_INFO) {
 
-                    boolean errorcode = false;
-                    boolean errormessage = false;
+                    boolean infocode = false;
+                    boolean infomessage = false;
                     boolean removeduser = false;
 
-                    ErrorHeader errorHeader = (ErrorHeader) receive.getHeader();
+                    InfoHeader infoHeader = (InfoHeader) receive.getHeader();
 
-                    System.out.println("Received an error header with fields: ");
-                    System.out.println(" -Error code: " + errorHeader.getErrorCode());
-                    System.out.println(" -Error message: " + errorHeader.getErrorMsg());
+                    System.out.println("\nReceived an information header with fields: ");
+                    System.out.println(" -Info code: " + infoHeader.getInfoCode());
+                    System.out.println(" -Info message: " + infoHeader.getMessage() + "\n");
 
-                    if (errorHeader.getErrorCode() == 0x00) errorcode = true;
-                    if (errorHeader.getErrorMsg().equals("Connection closed")) errormessage = true;
+                    if (infoHeader.getInfoCode() == 0x04) infocode = true;
+                    if (infoHeader.getMessage().equals("Connection to channel "
+                            + leaveHeader.channelID + " successfully closed")) infomessage = true;
                     if (Server.getChannel((long) 1).users.values().isEmpty())  removeduser = true;
 
-                    return errorcode && errormessage && removeduser;
+                    return infocode && infomessage && removeduser;
                 } else {
                     System.out.println("Received header of type: " + opcode);
                 }

@@ -8,7 +8,6 @@ import networking.SocketRequest;
 import networking.headers.*;
 import server.workers.*;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;

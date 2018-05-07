@@ -3,17 +3,15 @@ package server;
 import networking.MulticastPacketSender;
 import networking.PacketSender;
 import networking.headers.Header;
-import networking.headers.WriteHeader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 public class Channel {
     final int MAX_BUFFERED_MESSAGES = 2048;
@@ -24,7 +22,6 @@ public class Channel {
     public String channelName;
     private File log;
     public HashMap<String, User> users = new HashMap<>();
-    private ArrayList<String> usernames = new ArrayList<>();
 
     /*
      * TreeMap buffering messages sent from the server to clients in the given channel.
@@ -33,7 +30,7 @@ public class Channel {
 
     public Channel(String channelName, long id) {
         this.channelName = channelName;
-        this.log = new File("logs/" + channelName + ".txt");
+//        this.log = new File("logs/" + channelName + ".txt");
         this.channelID = id;
     }
 
@@ -42,19 +39,18 @@ public class Channel {
      */
     public synchronized String addUser(User user) {
         for (User u : users.values()) {
-            if (u.address.equals(user.address)) {
+            if (u.address.getAddress().equals(user.address.getAddress())) {
                 return null;
             }
         }
         String assignedUsername = user.username;
         Integer number = 0;
-        while(usernames.contains(assignedUsername)) {
+        while(users.keySet().contains(assignedUsername)) {
             number++;
             assignedUsername = assignedUsername.split("(?<=\\D)(?=\\d)")[0] + Integer.toString(number);
         }
         user.username = assignedUsername;
         users.put(assignedUsername,user);
-        usernames.add(assignedUsername);
         return user.username;
     }
 
@@ -62,22 +58,17 @@ public class Channel {
      *
      */
     public synchronized void removeUser(User user) {
-        System.out.println("Removing " + user.username);
         users.remove(user.username);
-        usernames.remove(user.username);
     }
 
     /*
      *
      */
     public void sendPacket(Header header) {
-        MulticastPacketSender packetSender = (MulticastPacketSender) Server.headerManager.multicastPacketSender(
-          header,users.values().stream()
-            .map(u -> u.address)
-            .collect(Collectors.toCollection(ArrayList::new))
-        );
+        ArrayList<InetSocketAddress> addresses = new ArrayList<>();
+        for (User user : users.values()) addresses.add(user.address);
+        MulticastPacketSender packetSender = (MulticastPacketSender) Server.headerManager.multicastPacketSender(header,addresses);
         packetSender.run();
-        System.out.println("Howdy");
     }
 
     public void sendPacket(Header header, InetSocketAddress address) {
@@ -98,20 +89,19 @@ public class Channel {
     }
 
     public void update() {
+        Calendar calendar = Calendar.getInstance();
         if (lastLoggedMsg != msgID) {
-//            PrintWriter pw = new PrintWriter(log);
             for (long index = lastLoggedMsg+1; index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
-                System.err.println("[" + e.militime + "] " + e.header);
-//                pw.println("[" + e.militime + "] " + e.header.toString());
+                calendar.setTimeInMillis(e.militime);
+                System.out.println("[" + calendar.getTime() + "] " + e.header.toString());
                 lastLoggedMsg = index;
             }
-//            pw.close();
         }
         if (bufferedMessages.keySet().size() > MAX_BUFFERED_MESSAGES) {
-          for (long i = bufferedMessages.firstKey(); i >= 0; i++) {
-            bufferedMessages.remove(i);
-          }
+            for (long i = msgID - MAX_BUFFERED_MESSAGES; i <= msgID - MAX_BUFFERED_MESSAGES/2; i++) {
+                bufferedMessages.remove(i);
+            }
         }
     }
 
@@ -128,17 +118,13 @@ public class Channel {
         this.bufferedMessages.remove(msgID);
     }
 
-    public synchronized boolean hasMessage(long msgID) {
-      return this.bufferedMessages.containsKey(msgID);
-    }
-
-    public synchronized BufferedMessageEntry getMessage(long msgID) {
+    public synchronized BufferedMessageEntry getFromBufferedTreeMap(Long msgID) {
         return this.bufferedMessages.get(msgID);
     }
 
     public class BufferedMessageEntry implements Comparable<BufferedMessageEntry> {
         Header header;
-        long militime;
+        Long militime;
 
         BufferedMessageEntry(Header header) {
             this.header = header;
@@ -147,7 +133,7 @@ public class Channel {
 
         public Header getHeader() { return header; }
 
-        public long getMilitime() { return militime; }
+        public Long getMilitime() { return militime; }
 
         @Override
         public int compareTo(BufferedMessageEntry messageEntry) {
