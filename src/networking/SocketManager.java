@@ -60,11 +60,11 @@ public class SocketManager {
             socket.send(toSend);
             this.lastSendWasSuccessfull.set(true);
           }
-        } catch (InterruptedException | SocketTimeoutException ignored) {
-          this.lastSendWasSuccessfull.set(false);
+        } catch (InterruptedException e) {} catch (SocketTimeoutException ignored) {
         } catch (Exception e) {
           System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
+          this.lastSendWasSuccessfull.set(false);
         }
         try {
           for (int i = 0; i < buffer.length; i++) buffer[i] = 0;
