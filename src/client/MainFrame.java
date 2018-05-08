@@ -177,6 +177,52 @@ public class MainFrame extends JFrame {
                 case "/op":
                     client.sendCommandHeader(channel.getChannelID(), input);
                     break;
+                case "/demo":
+                    // Send a message.
+                    sendMessage("Hello, I'm about to leave");
+
+                    String channelName = channel.getChannelName();
+                    String channelNickname = channel.getNick();
+
+                    // then leave
+                    leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
+                    leaveWorker.execute();
+                    try {
+                        boolean leaveSuccess = leaveWorker.get(2, TimeUnit.SECONDS);
+                        if (leaveSuccess) {
+                            channels.remove(channel);
+                        }
+                        else {
+                            this.printToMesssageChannel("SERVER",
+                                    "Failed to leave channel " + channel.getChannelName());
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                        this.printToMesssageChannel("SERVER",
+                                "Failed to leave channel " + channel.getChannelName());
+                    }
+
+                    // Then rejoin.
+                    joinWorker = new JoinSwingWorker(client, channelName, channelNickname);
+                    joinWorker.execute();
+                    try {
+                        Optional<ChannelPanel> newChannel = joinWorker.get(2, TimeUnit.SECONDS);
+                        if (newChannel.isPresent()) {
+                            addChannel(newChannel.get());
+                        } else {
+                            printToMesssageChannel("ERROR",
+                                    "Joining channel " + substrings[1] + " failed.");
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                        printToMesssageChannel("ERROR",
+                                "Joining channel " + substrings[1] + " failed.");
+                    }
+
+                    // TODO: Make these actually work.
+                    client.sendCommandHeader(channel.getChannelID(), "/listusers");
+                    client.sendCommandHeader(channel.getChannelID(), "/listchannels");
+                    break;
                 case "/help":
                 default:
                   printToMesssageChannel("HELP", HELP_STRING);

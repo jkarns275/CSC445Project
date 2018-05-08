@@ -4,7 +4,6 @@ import networking.MulticastPacketSender;
 import networking.PacketSender;
 import networking.headers.Header;
 import networking.headers.InfoHeader;
-import networking.headers.WriteHeader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,7 +17,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Channel {
-    final int MAX_BUFFERED_MESSAGES = 2048;
+    private final int MAX_BUFFERED_MESSAGES = 2048;
     public long channelID;
     private long msgID = 0;
     private long lastLoggedMsg = 0;
@@ -50,13 +49,16 @@ public class Channel {
             }
         }
         String assignedUsername = user.username;
-        Integer number = 0;
+        int number = 0;
         while(users.keySet().contains(assignedUsername)) {
             number++;
             assignedUsername = assignedUsername.split("(?<=\\D)(?=\\d)")[0] + Integer.toString(number);
         }
         user.username = assignedUsername;
         users.put(assignedUsername,user);
+        this.sendPacket(new InfoHeader(channelID, InfoHeader.INFO_SERVER_MSG, this
+            .getAndIncrementMsgID(),
+        "User '" + user.username + "' has joined."));
         return user.username;
     }
 
@@ -100,9 +102,8 @@ public class Channel {
         lastLoggedMsg += increment;
     }
 
-    public void update() {
-        Calendar calendar = Calendar.getInstance();
     public void update(HashSet<InetSocketAddress> heartbeatClients) {
+        Calendar calendar = Calendar.getInstance();
         if (lastLoggedMsg != msgID) {
             for (long index = lastLoggedMsg+1; index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
