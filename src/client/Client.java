@@ -65,13 +65,13 @@ public class Client implements Runnable {
         }
 
         if (!this.hio.probablyConnected()) {
-          System.out.println("Probably not connected :(");
           MainFrame m = GUI.getInstance();
           ArrayList<Tuple<String, String>> retries = new ArrayList<>();
           channels.forEach((channelID, channelName) -> {
             retries.add(new Tuple<>(channelName, GUI.getInstance().getChannelNick(channelID)));
             m.removeChannel(channelID);
             heartbeatSender.removeChannel(channelID);
+            System.out.println("hey!");
           });
           channels.clear();
         } else if (!this.retries.isEmpty()) {

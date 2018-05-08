@@ -13,7 +13,7 @@ public class HeartbeatHeader extends Header {
   HeartbeatHeader() { }
 
   public HeartbeatHeader(long channelID) { this.channelID = channelID; }
-
+  public HeartbeatHeader(HeartbeatHeader h) { this.channelID = h.channelID; }
   public void writeObject(ObjectOutputStream out) throws IOException {
     out.writeByte(Constants.OP_HEARTBEAT);
     out.writeLong(channelID);
@@ -26,7 +26,7 @@ public class HeartbeatHeader extends Header {
   @Override
   public int opcode() { return Constants.OP_HEARTBEAT; }
 
-  public int hashCode() { return opcode() ^ (int) channelID; }
+  public int hashCode() { return Long.hashCode(this.channelID); }
 
   public boolean equals(Object other) {
     if (other instanceof HeartbeatHeader) {

@@ -301,7 +301,8 @@ public class MainFrame extends JFrame {
             }
         }
         // no such channel
-        client.sendErrorHeader((byte) 2, "No Such Channel");
+      //System.out.println("channelID: " + channelID + ", nick: " + nick);
+      //client.sendErrorHeader((byte) 2, "No Such Channel");
     }
 
     public void setMuteChannel(long channelID, boolean status) {

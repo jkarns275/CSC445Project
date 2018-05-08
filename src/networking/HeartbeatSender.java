@@ -4,6 +4,7 @@ import common.Constants;
 import networking.headers.HeartbeatHeader;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
@@ -13,7 +14,7 @@ public class HeartbeatSender {
 
   private final static long HEARTBEAT_INTERVAL = Constants.SECONDS_TO_NANOS / 4; // Every 8 seconds
 
-  private final HashSet<Long> channels = new HashSet<>();
+  private final ArrayList<Long> channels = new ArrayList<>();
   private final SocketManager socket;
   private final InetSocketAddress serverAddress;
   private long lastSendTime;
@@ -38,9 +39,9 @@ public class HeartbeatSender {
 
   private void send() throws InterruptedException {
     this.lastSendTime = System.nanoTime();
-    for (Long channel : this.channels) {
+    for (long channel : this.channels) {
       this.heartbeatHeader.setChannelID(channel);
-      this.socket.send(this.heartbeatHeader, this.serverAddress);
+      this.socket.send(new HeartbeatHeader(this.heartbeatHeader), this.serverAddress);
     }
   }
 
