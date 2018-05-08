@@ -60,7 +60,6 @@ public class SocketManager {
             socket.send(toSend);
             this.lastSendWasSuccessfull.set(true);
           }
-        } catch (InterruptedException e) {} catch (SocketTimeoutException ignored) {
         } catch (Exception e) {
           System.err.println("Encountered error in SocketManager:");
           e.printStackTrace();
