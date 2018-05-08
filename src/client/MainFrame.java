@@ -2,7 +2,6 @@ package client;
 
 import client.workers.JoinSwingWorker;
 import client.workers.LeaveSwingWorker;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
 import javax.swing.*;
 import java.awt.*;
