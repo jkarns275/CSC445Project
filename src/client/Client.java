@@ -73,7 +73,6 @@ public class Client implements Runnable {
             m.removeChannel(channelID);
             heartbeatSender.removeChannel(channelID);
           });
-          channels.keySet().forEach(heartbeatSender::removeChannel);
           channels.clear();
         } else if (!this.retries.isEmpty()) {
           for (Tuple<String, String> r : retries) {

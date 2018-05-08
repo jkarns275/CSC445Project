@@ -26,7 +26,7 @@ public class HeartbeatHeader extends Header {
   @Override
   public int opcode() { return Constants.OP_HEARTBEAT; }
 
-  public int hashCode() { return opcode(); }
+  public int hashCode() { return opcode() ^ (int) channelID; }
 
   public boolean equals(Object other) {
     if (other instanceof HeartbeatHeader) {
