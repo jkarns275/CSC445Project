@@ -2,12 +2,16 @@ package client;
 
 import client.workers.JoinSwingWorker;
 import client.workers.LeaveSwingWorker;
-import client.workers.WriteSwingWorker;
+import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
+import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -179,11 +183,10 @@ public class MainFrame extends JFrame {
                     break;
                 case "/demo":
                     // Send a message.
-                    sendMessage("Hello, I'm about to leave");
-
-                    String channelName = channel.getChannelName();
-                    String channelNickname = channel.getNick();
-
+                    sendMessage("Hello, whats up.");
+                    client.sendCommandHeader(channel.getChannelID(), "/op kick Josh");
+                    client.sendCommandHeader(channel.getChannelID(), "/op mute John");
+                    /*
                     // then leave
                     leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
                     leaveWorker.execute();
@@ -218,8 +221,7 @@ public class MainFrame extends JFrame {
                         printToMesssageChannel("ERROR",
                                 "Joining channel " + substrings[1] + " failed.");
                     }
-
-                    // TODO: Make these actually work.
+                    */
                     client.sendCommandHeader(channel.getChannelID(), "/listusers");
                     client.sendCommandHeader(channel.getChannelID(), "/listchannels");
                     break;
@@ -231,6 +233,39 @@ public class MainFrame extends JFrame {
         } else {
             sendMessage(input);
         }
+    }
+
+    static boolean confirm(long prop, DatagramSocket[] hosts) throws IOException {
+      final ByteArrayOutputStream bo = new ByteArrayOutputStream(Long.BYTES);
+      final ObjectOutputStream oo = new ObjectOutputStream(bo);
+      oo.writeLong(prop);
+
+      for (DatagramSocket host : hosts) {
+        try {
+        final DatagramPacket toSend = new DatagramPacket(bo.toByteArray(), bo.size());
+        host.send(toSend);
+        } catch (Exception e) {
+          System.out.println("Sad!");
+        }
+      }
+
+
+      final ArrayList<Long> replies = new ArrayList<>();
+
+      for (DatagramSocket host : hosts) {
+        try {
+          final DatagramPacket received = new DatagramPacket(new byte[8], 8);
+          host.receive(received);
+          final ByteArrayInputStream bi =
+            new ByteArrayInputStream(received.getData(), received.getOffset(), received.getLength());
+          final ObjectInputStream oi = new ObjectInputStream(bi);
+          replies.add(oi.readLong());
+        } catch (Exception e) {
+          System.out.println("Sad!");
+        }
+      }
+      long numGreater = replies.stream().reduce(0L, (acc, i) -> i > prop ? acc + 1 : acc);
+      return numGreater > (hosts.length / 2 )+ 1;
     }
 
     /**

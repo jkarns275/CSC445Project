@@ -89,6 +89,21 @@ public class CommandWorker implements Runnable {
               default:
                 System.err.println("Received erroneous command: " + command[1]);
             }
+          } else if (command[0].equals("/listusers")) {
+            StringBuilder sb = new StringBuilder("Users: ");
+            channel.users.keySet().stream().forEach((username) -> {
+                sb.append(username);
+                sb.append(", ");
+            });
+            channel.sendPacket(new InfoHeader(channel.channelID, InfoHeader.INFO_SERVER_MSG, channel
+              .getAndIncrementMsgID(), sb.toString()));
+          } else if (command[0].equals("/listchannels")) {
+            StringBuilder sb = new StringBuilder("Channels: ");
+            Server.channels.values().stream()
+              .map((chan) -> chan.channelName)
+              .forEach((chanName) -> { sb.append(chanName); sb.append(", "); });
+            channel.sendPacket(new InfoHeader(channel.channelID, InfoHeader.INFO_SERVER_MSG, channel.getAndIncrementMsgID(), sb
+              .toString()));
           } else {
             throw new Error("Incorrect header");
           }

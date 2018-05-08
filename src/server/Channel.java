@@ -44,7 +44,7 @@ public class Channel {
      */
     public synchronized String addUser(User user) {
         for (User u : users.values()) {
-            if (u.address.getAddress().equals(user.address.getAddress())) {
+            if (u.address.getAddress().equals(user.address.getAddress()) && u.address.getPort() == user.address.getPort()) {
                 return null;
             }
         }
@@ -107,6 +107,7 @@ public class Channel {
         if (lastLoggedMsg != msgID) {
             for (long index = lastLoggedMsg+1; index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
+                if (e == null) continue;
                 calendar.setTimeInMillis(e.militime);
                 System.out.println("[" + calendar.getTime() + "] " + e.header.toString());
                 lastLoggedMsg = index;

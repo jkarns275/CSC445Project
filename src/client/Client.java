@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Client implements Runnable {
 
   private static final int CLIENT_PARALLELISM = 4;
-  private static final long HEARTBEAT_MANAGER_CLEAN_DELAY = 2 * Constants.SECONDS_TO_NANOS;
+  private static final long HEARTBEAT_MANAGER_CLEAN_DELAY = Constants.SECONDS_TO_NANOS / 8;
   private static final int WRITE_TIMEOUT = 5;
 
   private final int port;
@@ -170,7 +170,7 @@ public class Client implements Runnable {
               GUI.setMuteStatus(channelID, false);
               break;
           case 3: // server message
-              //GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
+              GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
               break;
           case 4: // closing connection
               leaveSuccess = true;

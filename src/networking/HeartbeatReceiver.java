@@ -2,16 +2,14 @@ package networking;
 
 import java.net.InetSocketAddress;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.PriorityQueue;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Manages heartbeats for a specific channel.
  */
 class HeartbeatReceiver {
 
-  public static int HEARTBEAT_MAX = 8;
+  public static int HEARTBEAT_MAX = 2;
 
   private class Client implements Comparable<Client> {
     public InetSocketAddress address;
@@ -23,8 +21,9 @@ class HeartbeatReceiver {
 
     @Override
     public int compareTo(Client o) {
-      if (receivedAt.isBefore(o.receivedAt)) return -11;
-      else return 1;
+      if (receivedAt.isBefore(o.receivedAt)) return -1;
+      else if (receivedAt.isAfter(o.receivedAt)) return 1;
+      else return 0;
     }
 
     @Override
@@ -48,7 +47,7 @@ class HeartbeatReceiver {
 
 
   private final HashSet<InetSocketAddress> clients = new HashSet<>();
-  private final TreeSet<Client> leastRecentHeartbeat = new TreeSet<>();
+  private final PriorityQueue<Client> leastRecentHeartbeat = new PriorityQueue<>();
 
   /**
    * Check the priority queue to see if there are any clients who haven't send a heartbeat
@@ -60,11 +59,10 @@ class HeartbeatReceiver {
     Client c;
     // Remove all invalid clients.
     while(!leastRecentHeartbeat.isEmpty()) {
-      c = leastRecentHeartbeat.first();
+      c = leastRecentHeartbeat.peek();
       long timedif = Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond();
-      System.out.println("Time diff: " + timedif);
       if (c != null && Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond() > HEARTBEAT_MAX) {
-        c = leastRecentHeartbeat.pollFirst();
+        c = leastRecentHeartbeat.poll();
         clients.remove(c.address);
       } else {
         break;

@@ -88,4 +88,8 @@ public class InfoHeader extends Header {
   public long getMessageID() { return messageID; }
 
   public String getMessage() { return message; }
+
+  public void setInfoCode(byte infoCode) {
+    this.infoCode = infoCode;
+  }
 }
