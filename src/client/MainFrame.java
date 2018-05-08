@@ -125,7 +125,7 @@ public class MainFrame extends JFrame {
      * Direct message or command inputted by the user to the correct function for sending.
      * @param input String input from user
      */
-    private void parseMessage(String input) {
+    public void parseMessage(String input) {
         // check if message is a command
         if (input.regionMatches(0, "/", 0, 1)) {
             // command packet
@@ -310,8 +310,19 @@ public class MainFrame extends JFrame {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
             if (channel.getChannelID() == channelID) {
                 channel.setIsMuted(status);
+              break;
             }
         }
 
+    }
+
+    public String getChannelNick(long channelID) {
+        for (int i = 0; i < channels.getTabCount(); i++) {
+            ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
+            if (channel.getChannelID() == channelID) {
+              return channel.getNick();
+            }
+        }
+        return null;
     }
 }

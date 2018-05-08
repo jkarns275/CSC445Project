@@ -42,6 +42,7 @@ public class Client implements Runnable {
   private String awaitNick = null;
   private Header prevHeader;
   private long nanoTime = System.nanoTime();
+  private ArrayList<Tuple<String, String>> retries = new ArrayList<>();
 
   public Client(InetSocketAddress server, int port) throws IOException {
 
@@ -66,9 +67,19 @@ public class Client implements Runnable {
         if (!this.hio.probablyConnected()) {
           System.out.println("Probably not connected :(");
           MainFrame m = GUI.getInstance();
-          channels.keySet().forEach(m::removeChannel);
+          ArrayList<Tuple<String, String>> retries = new ArrayList<>();
+          channels.forEach((channelID, channelName) -> {
+            retries.add(new Tuple<>(channelName, GUI.getInstance().getChannelNick(channelID)));
+            m.removeChannel(channelID);
+            heartbeatSender.removeChannel(channelID);
+          });
           channels.keySet().forEach(heartbeatSender::removeChannel);
           channels.clear();
+        } else if (!this.retries.isEmpty()) {
+          for (Tuple<String, String> r : retries) {
+            GUI.getInstance().parseMessage("/join " + r.first() + " " + r.second());
+          }
+          retries.clear();
         }
 
         nanoTime = System.nanoTime();
