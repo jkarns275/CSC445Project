@@ -14,16 +14,12 @@ import java.net.InetSocketAddress;
 public class JoinWorker implements Runnable {
     JoinHeader joinHeader;
     InetSocketAddress address;
-    Server server = Server.getInstance();
 
     public JoinWorker(JoinHeader joinHeader, InetSocketAddress address) {
         this.joinHeader = joinHeader;
         this.address = address;
     }
 
-    /*
-     *
-     */
     public void run() {
         User user = new User(joinHeader.getDesiredUsername(), address);
         boolean channelExists = false;

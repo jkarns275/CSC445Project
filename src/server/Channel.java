@@ -1,6 +1,5 @@
 package server;
 
-import jdk.nashorn.internal.runtime.options.Option;
 import networking.MulticastPacketSender;
 import networking.PacketSender;
 import networking.headers.Header;
@@ -13,6 +12,10 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.TreeMap;
 
 public class Channel {
     final int MAX_BUFFERED_MESSAGES = 2048;
@@ -33,7 +36,7 @@ public class Channel {
 
     public Channel(String channelName, long id) {
         this.channelName = channelName;
-        this.log = new File("logs/" + channelName + ".txt");
+//        this.log = new File("logs/" + channelName + ".txt");
         this.channelID = id;
     }
 
@@ -42,19 +45,18 @@ public class Channel {
      */
     public synchronized String addUser(User user) {
         for (User u : users.values()) {
-            if (u.address.equals(user.address)) {
+            if (u.address.getAddress().equals(user.address.getAddress())) {
                 return null;
             }
         }
         String assignedUsername = user.username;
         Integer number = 0;
-        while(usernames.contains(assignedUsername)) {
+        while(users.keySet().contains(assignedUsername)) {
             number++;
             assignedUsername = assignedUsername.split("(?<=\\D)(?=\\d)")[0] + Integer.toString(number);
         }
         user.username = assignedUsername;
         users.put(assignedUsername,user);
-        usernames.add(assignedUsername);
         return user.username;
     }
 
@@ -67,7 +69,6 @@ public class Channel {
             .getAndIncrementMsgID(),
         "User '" + user.username + "' has left."));
         users.remove(user.username);
-        usernames.remove(user.username);
     }
 
     /*
@@ -99,22 +100,21 @@ public class Channel {
         lastLoggedMsg += increment;
     }
 
+    public void update() {
+        Calendar calendar = Calendar.getInstance();
     public void update(HashSet<InetSocketAddress> heartbeatClients) {
         if (lastLoggedMsg != msgID) {
-//            PrintWriter pw = new PrintWriter(log);
-            for (long index = bufferedMessages.firstKey(); index != msgID; index++) {
+            for (long index = lastLoggedMsg+1; index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
-                if (e == null) break;
-                //System.err.println("[" + e.militime + "] " + e.header);
-//                pw.println("[" + e.militime + "] " + e.header.toString());
+                calendar.setTimeInMillis(e.militime);
+                System.out.println("[" + calendar.getTime() + "] " + e.header.toString());
                 lastLoggedMsg = index;
             }
-//            pw.close();
         }
         if (bufferedMessages.keySet().size() > MAX_BUFFERED_MESSAGES) {
-          for (long i = bufferedMessages.firstKey(); i >= 0; i++) {
-            bufferedMessages.remove(i);
-          }
+            for (long i = msgID - MAX_BUFFERED_MESSAGES; i <= msgID - MAX_BUFFERED_MESSAGES/2; i++) {
+                bufferedMessages.remove(i);
+            }
         }
         usersToPurge.clear();
         users.forEach((_nickname, user) -> {
@@ -136,11 +136,7 @@ public class Channel {
         this.bufferedMessages.remove(msgID);
     }
 
-    public synchronized boolean hasMessage(long msgID) {
-      return this.bufferedMessages.containsKey(msgID);
-    }
-
-    public synchronized BufferedMessageEntry getMessage(long msgID) {
+    public synchronized BufferedMessageEntry getFromBufferedTreeMap(Long msgID) {
         return this.bufferedMessages.get(msgID);
     }
 

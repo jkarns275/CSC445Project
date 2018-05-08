@@ -1,6 +1,5 @@
 package server.workers;
 
-import networking.headers.ErrorHeader;
 import networking.headers.InfoHeader;
 import networking.headers.LeaveHeader;
 import server.Channel;
@@ -28,6 +27,7 @@ public class LeaveWorker implements Runnable {
 
         InfoHeader infoHeader = new InfoHeader(leaveHeader.channelID, (byte) InfoHeader.INFO_CLOSED, channel.getAndIncrementMsgID(),
                 "User " + userNickname + " has left.");
+        channel.incrementLastLoggedMsg(1);
 
         channel.sendPacket(infoHeader);
 

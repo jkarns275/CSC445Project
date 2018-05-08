@@ -79,7 +79,7 @@ public class ChannelPanel extends JPanel {
 
         JScrollBar vert = scrollPane.getVerticalScrollBar();
         if (vert != null) {
-            vert.setValue(vert.getMaximum());
+            SwingUtilities.invokeLater(() -> vert.setValue(vert.getModel().getMaximum()));
         }
     }
 

@@ -23,6 +23,7 @@ public class WriteWorker implements Runnable {
             if (channel.users.get(writeHeader.getUsername()) == null) return;
             if (channel.users.get(writeHeader.getUsername()).getMuted()) return;
             writeHeader.setMsgID(channel.getAndIncrementMsgID());
+            channel.incrementLastLoggedMsg(1);
             channel.addToBufferedTreeMap(writeHeader.getMsgID(), writeHeader);
             channel.sendPacket(writeHeader);
         } else {

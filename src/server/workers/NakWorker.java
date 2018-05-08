@@ -19,20 +19,17 @@ public class NakWorker implements Runnable {
 
     public void run() {
         Channel channel = Server.getChannel(header.getChannelID());
+        Channel.BufferedMessageEntry bufferedMessageEntry;
         long upperMsg = header.getUpperMsgID();
         long lowerMsg = header.getLowerMsgID();
-        Channel.BufferedMessageEntry entry = null;
-        for (long i = lowerMsg; ((upperMsg - i) > 0); i++) {
-          Header bufferedHeader = null;
-          if (channel != null && (entry = channel.getMessage(i)) != null) {
-            bufferedHeader = entry.getHeader();
-            if (bufferedHeader != null) {
-                channel.sendPacket(bufferedHeader,address);
+        for (Long i = lowerMsg; ((upperMsg - i) > 0); i++) {
+            if ((bufferedMessageEntry = channel.getFromBufferedTreeMap(i)) != null) {
+                Header bufferedHeader = bufferedMessageEntry.getHeader();
+                channel.sendPacket(bufferedHeader, address);
+            } else {
+                ErrorHeader errorHeader = new ErrorHeader((byte) 0x04, "Message, " + i + ", no longer buffered");
+                channel.sendPacket(errorHeader, address);
             }
-          } else {
-            ErrorHeader errorHeader = new ErrorHeader((byte)0x04, "Message no longer buffered");
-            if (channel != null) channel.sendPacket(errorHeader,address);
-          }
         }
     }
 }
