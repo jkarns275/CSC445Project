@@ -67,6 +67,7 @@ public class Client implements Runnable {
           System.out.println("Probably not connected :(");
           MainFrame m = GUI.getInstance();
           channels.keySet().forEach(m::removeChannel);
+          channels.keySet().forEach(heartbeatSender::removeChannel);
           channels.clear();
         }
 
