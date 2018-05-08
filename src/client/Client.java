@@ -64,9 +64,9 @@ public class Client implements Runnable {
         }
 
         if (!this.hio.probablyConnected()) {
-          channels.forEach((channelID, _nickname) -> {
-            this.leaveChannel(channelID);
-          });
+          MainFrame m = GUI.getInstance();
+          channels.keySet().forEach(m::removeChannel);
+          channels.clear();
         }
 
         nanoTime = System.nanoTime();
