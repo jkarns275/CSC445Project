@@ -64,6 +64,7 @@ public class Client implements Runnable {
         }
 
         if (!this.hio.probablyConnected()) {
+          System.out.println("Probably not connected :(");
           MainFrame m = GUI.getInstance();
           channels.keySet().forEach(m::removeChannel);
           channels.clear();
