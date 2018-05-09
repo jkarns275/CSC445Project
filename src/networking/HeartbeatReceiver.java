@@ -81,6 +81,6 @@ class HeartbeatReceiver {
   }
 
   public HashSet<InetSocketAddress> getClients() {
-    return clients;
+    return new HashSet<>(clients);
   }
 }

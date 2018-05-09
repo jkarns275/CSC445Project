@@ -1,26 +1,32 @@
 package networking;
 
 import common.Constants;
+import common.Tuple;
 import networking.headers.HeartbeatHeader;
 
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeartbeatManager {
 
   private static final long UPDATE_FREQUENCY = Constants.SECONDS_TO_NANOS * 1;
 
-  private final HashMap<Long, HeartbeatReceiver> receivers = new HashMap<>();
+  private final ConcurrentHashMap<Long, HeartbeatReceiver> receivers = new ConcurrentHashMap<>();
 
-  private final AtomicBoolean shouldKill = new AtomicBoolean(false);
+  public final AtomicBoolean shouldKill = new AtomicBoolean(false);
 
   private class HeartbeatWorker implements Runnable {
     private final AtomicBoolean shouldKill;
     private final HeartbeatManager heartbeatManager;
-    public HeartbeatWorker(AtomicBoolean shouldkill, HeartbeatManager heartbeatManager) {
+    private final SynchronousQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue;
+    public HeartbeatWorker(AtomicBoolean shouldkill, HeartbeatManager heartbeatManager,
+                           SynchronousQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue) {
       this.shouldKill = shouldkill;
       this.heartbeatManager = heartbeatManager;
+      this.heartbeatQueue = heartbeatQueue;
     }
 
     @Override
@@ -29,13 +35,27 @@ public class HeartbeatManager {
       while (!shouldKill.get()) {
         if (System.nanoTime() - lastUpdateTime > UPDATE_FREQUENCY) {
           heartbeatManager.update();
+          heartbeatManager.clean();
+        }
+        Tuple<Long, InetSocketAddress> item;
+        for (int i = 0; i < 8; i++) {
+          if ((item = heartbeatQueue.poll()) != null)
+            heartbeatManager.receivers
+              .getOrDefault(item.first(), new HeartbeatReceiver())
+              .processHeartbeat(item.second());
         }
       }
     }
 
-  };
+  }
 
-  public HeartbeatManager() { }
+  private SynchronousQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue = new SynchronousQueue<>();
+  private HeartbeatWorker heartbeatWorker = new HeartbeatWorker(shouldKill, this, heartbeatQueue);
+  private Thread heartbeatWorkerThread = new Thread(heartbeatWorker);
+
+  public HeartbeatManager() {
+    heartbeatWorkerThread.start();
+  }
 
   /**
    * Should be called as frequently as you would like dead clients to be dropped.
@@ -54,14 +74,10 @@ public class HeartbeatManager {
   }
 
   public void processHeartbeat(long channelID, InetSocketAddress address) {
-    this.receivers.putIfAbsent(channelID, new HeartbeatReceiver());
-    this.receivers.get(channelID).processHeartbeat(address);
-  }
-
-  public void removeClient(long channelID, InetSocketAddress address) {
-    HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
-    if (heartbeatReceiver != null) {
-      heartbeatReceiver.removeClient(address);
+    try {
+      this.heartbeatQueue.put(new Tuple<>(channelID, address));
+    } catch (Exception e) {
+      System.out.println("Failed to process heartbeat!");
     }
   }
 

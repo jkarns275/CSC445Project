@@ -110,11 +110,10 @@ public class Server {
         while (true) {
             try {
                 headerManager.update();
-                heartbeatManager.update();
-                heartbeatManager.clean();
                 for (Channel channel : channels.values()) {
                   Optional<HashSet<InetSocketAddress>> clients = heartbeatManager.getActiveClients(channel.channelID);
-                  channel.update(clients.orElse(new HashSet<>()));
+//                  channel.update(clients.orElse(new HashSet<>()));
+                  clients.ifPresent(channel::update);
                 }
                 SocketRequest receive;
                 int packetsRead = 0;

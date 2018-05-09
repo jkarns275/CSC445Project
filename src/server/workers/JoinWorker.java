@@ -10,6 +10,7 @@ import server.Server;
 import server.User;
 
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 
 public class JoinWorker implements Runnable {
     JoinHeader joinHeader;
@@ -26,6 +27,7 @@ public class JoinWorker implements Runnable {
 
         for (Channel channel : Server.channels.values()) {
             if (channel.channelName.equals(joinHeader.getChannelName())) {
+                channel.update(Server.heartbeatManager.getActiveClients(channel.channelID).orElse(new HashSet<>()));
                 channelExists = true;
                 String assignedUsername = channel.addUser(user);
                 if (assignedUsername == null) {
