@@ -11,19 +11,12 @@ class HeartbeatReceiver {
 
   public static int HEARTBEAT_MAX = 3;
 
-  private class Client implements Comparable<Client> {
+  private class Client {
     public InetSocketAddress address;
     private Instant receivedAt;
 
     public Client(InetSocketAddress address, Instant receivedAt) {
       this.address = address; this.receivedAt = receivedAt;
-    }
-
-    @Override
-    public int compareTo(Client o) {
-      if (receivedAt.isBefore(o.receivedAt)) return -1;
-      else if (receivedAt.isAfter(o.receivedAt)) return 1;
-      else return 0;
     }
 
     @Override
@@ -47,7 +40,7 @@ class HeartbeatReceiver {
 
 
   private final HashSet<InetSocketAddress> clients = new HashSet<>();
-  private final PriorityQueue<Client> leastRecentHeartbeat = new PriorityQueue<>();
+  private final ArrayDeque<Client> leastRecentHeartbeat = new ArrayDeque<>();
 
   /**
    * Check the priority queue to see if there are any clients who haven't send a heartbeat
@@ -61,7 +54,7 @@ class HeartbeatReceiver {
     while(!leastRecentHeartbeat.isEmpty()) {
       c = leastRecentHeartbeat.peek();
       long timedif = Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond();
-      if (Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond() > HEARTBEAT_MAX) {
+      if (timedif > HEARTBEAT_MAX) {
         c = leastRecentHeartbeat.poll();
         clients.remove(c.address);
       }
@@ -78,7 +71,7 @@ class HeartbeatReceiver {
     Client c = new Client(socketAddress, Instant.now());
     if (leastRecentHeartbeat.contains(c))
       leastRecentHeartbeat.remove(c);
-    leastRecentHeartbeat.add(c);
+    leastRecentHeartbeat.offer(c);
     clients.add(socketAddress);
   }
 
