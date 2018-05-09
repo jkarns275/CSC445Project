@@ -35,12 +35,15 @@ public class Client implements Runnable {
   // Maps (Channel ID) -> (Nickname for this client in that channel)
   private final ConcurrentHashMap<Long, String> channels = new ConcurrentHashMap<>();
 
-  private boolean sourceReceived = false;
+  // Maps room name to corresponding source header
+  private ConcurrentSkipListMap<String, SourceHeader> sourcesReceived = new ConcurrentSkipListMap<>();
+  private ArrayList<Long> joinHeadersToPurge = new ArrayList<>();
+
   // Maps (write header magic) -> (time sent, corresponding write header)
   private ConcurrentSkipListMap<Long, Tuple<Long, WriteHeader>> writeRecvQueue = new ConcurrentSkipListMap<>();
-  private boolean leaveSuccess = false;
-  private String awaitNick = null;
-  private Header prevHeader;
+  // Maps (Join Header) -> (time sent)
+  private ConcurrentSkipListMap<Long, JoinHeader> joinRecvQueue = new ConcurrentSkipListMap<>();
+
   private long nanoTime = System.nanoTime();
   private ArrayList<Tuple<String, String>> retries = new ArrayList<>();
 
@@ -93,6 +96,7 @@ public class Client implements Runnable {
         }
 
         updateWriteRecvQueue();
+        updateJoinRecvQueue();
 
         SocketRequest receive;
         while ((receive = this.hio.recv()) != null) {
@@ -118,7 +122,6 @@ public class Client implements Runnable {
               // for a writeHeader with the same magic value.
               if (username != null && username.equals(writeHeader.getUsername()) &&
                   this.writeRecvQueue.containsKey(writeHeader.getMagic())) {
-                prevHeader = header;
                 this.writeRecvQueue.remove(writeHeader.getMagic());
               }
               // Display the message either way
@@ -127,15 +130,19 @@ public class Client implements Runnable {
 
               break;
            case OP_SOURCE:
+              SourceHeader sourceHeader = (SourceHeader) header;
+                sourcesReceived.put(sourceHeader.getChannelName(), sourceHeader);
+                /*
                 prevHeader =  header;
                 sourceReceived = true;
                 SourceHeader sourceHeader = (SourceHeader) header;
                 if (channels.containsKey(sourceHeader.getChannelID()))
                   channels.remove(sourceHeader.getChannelID());
                 channels.put(sourceHeader.getChannelID(), sourceHeader.getAssignedUsername());
+
                 synchronized (this) {
                     notifyAll();
-                }
+                }*/
                 break;
            case OP_HEARTBEAT:
               HeartbeatHeader heartbeatHeader = (HeartbeatHeader) header;
@@ -186,10 +193,7 @@ public class Client implements Runnable {
               GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
               break;
           case 4: // closing connection
-              leaveSuccess = true;
-              synchronized (this) {
-                  notifyAll();
-              }
+              GUI.getInstance().removeChannel(channelID);
       }
       GUI.writeInfo(channelID, infoHeader.getMessageID(), infoHeader.getMessage());
   }
@@ -205,10 +209,10 @@ public class Client implements Runnable {
   }
 
   private void sendJoinHeader(String channelName, String desiredUsername) {
-    hio.send(hio.packetSender(new JoinHeader(desiredUsername, channelName), server));
+    JoinHeader joinHeader = new JoinHeader(desiredUsername, channelName);
+    this.joinRecvQueue.put(nanoTime, joinHeader);
+    hio.send(hio.packetSender(joinHeader, server));
   }
-
-  private void sendLeaveHeader(long channelID) { hio.send(hio.packetSender(new LeaveHeader(channelID), server)); }
 
   public void sendErrorHeader(byte errorCode, String errorMessage) {
     hio.send(hio.packetSender(new ErrorHeader(errorCode, errorMessage), server));
@@ -231,6 +235,7 @@ public class Client implements Runnable {
     return result.isPresent() && result.get().size() > 0;
   }
 
+  /*
   public synchronized Optional<ClientChannel> joinChannel(String channelName, String nick) {
       try {
           sendJoinHeader(channelName, nick);
@@ -263,6 +268,7 @@ public class Client implements Runnable {
           return false;
       }
   }
+  */
 
   public void kill() {
     this.shouldKill.set(true);
@@ -273,9 +279,38 @@ public class Client implements Runnable {
     }
   }
 
-  public synchronized Void sendMessage(long channelID, long messageID, String nick, String message) {
+  public synchronized void joinChannel(String channelName, String desiredUsername) {
+    sendJoinHeader(channelName, desiredUsername);
+  }
+
+  public synchronized void sendMessage(long channelID, long messageID, String nick, String message) {
     sendWriteHeader(channelID, messageID, nick, message);
-    return null;
+  }
+
+
+  private void updateJoinRecvQueue() {
+    while (!this.joinRecvQueue.isEmpty()) {
+      if (nanoTime - this.joinRecvQueue.firstEntry().getKey() > Constants.SECONDS_TO_NANOS * WRITE_TIMEOUT) {
+        Map.Entry<Long, JoinHeader> entry = this.joinRecvQueue.pollFirstEntry();
+        JoinHeader joinHeader = entry.getValue();
+        pool.submit(() -> GUI.getInstance().printToMesssageChannel("ERROR", "Failed join channel'" +
+          joinHeader.getChannelName() + "'"));
+        continue;
+      }
+      break;
+    }
+    this.joinHeadersToPurge.clear();
+    this.joinRecvQueue.forEach((timeSent, joinHeader) -> {
+      if (this.sourcesReceived.containsKey(joinHeader.getChannelName())) {
+        SourceHeader sourceHeader = this.sourcesReceived.get(joinHeader.getChannelName());
+        this.joinHeadersToPurge.add(timeSent);
+        GUI.getInstance().addChannel(new ChannelPanel(sourceHeader.getChannelID(), sourceHeader.getChannelName(),
+          sourceHeader.getAssignedUsername()));
+        this.sourcesReceived.remove(joinHeader.getChannelName());
+      }
+    });
+    for (Long timeSent: joinHeadersToPurge)
+      this.joinRecvQueue.remove(timeSent);
   }
 
   private void updateWriteRecvQueue() {

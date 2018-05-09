@@ -1,8 +1,5 @@
 package client;
 
-import client.workers.JoinSwingWorker;
-import client.workers.LeaveSwingWorker;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
@@ -143,39 +140,10 @@ public class MainFrame extends JFrame {
                 case "/whois":
                     break;
                 case "/join":
-                    JoinSwingWorker joinWorker = new JoinSwingWorker(client, substrings[1], substrings[2]);
-                    joinWorker.execute();
-                    try {
-                        Optional<ChannelPanel> newChannel = joinWorker.get(2, TimeUnit.SECONDS);
-                        if (newChannel.isPresent()) {
-                            addChannel(newChannel.get());
-                        } else {
-                            printToMesssageChannel("ERROR",
-                                    "Joining channel " + substrings[1] + " failed.");
-                        }
-                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                        e.printStackTrace();
-                        printToMesssageChannel("ERROR",
-                                "Joining channel " + substrings[1] + " failed.");
-                    }
+                    client.joinChannel(substrings[1], substrings[2]);
                     break;
                 case "/leave":
-                    LeaveSwingWorker leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
-                    leaveWorker.execute();
-                    try {
-                        boolean leaveSuccess = leaveWorker.get(2, TimeUnit.SECONDS);
-                        if (leaveSuccess) {
-                            channels.remove(channel);
-                        }
-                        else {
-                            this.printToMesssageChannel("SERVER",
-                                    "Failed to leave channel " + channel.getChannelName());
-                        }
-                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                        e.printStackTrace();
-                        this.printToMesssageChannel("SERVER",
-                                "Failed to leave channel " + channel.getChannelName());
-                    }
+                    removeChannel(channel.getChannelID());
                     break;
                 case "/op":
                     client.sendCommandHeader(channel.getChannelID(), input);
@@ -271,7 +239,7 @@ public class MainFrame extends JFrame {
      * Add and display a channel to the client gui.
      * @param panel ChannelPanel representing some channel
      */
-    private void addChannel(ChannelPanel panel) {
+    public void addChannel(ChannelPanel panel) {
         SwingUtilities.invokeLater(() -> {
             channels.addTab(panel.getChannelName(), panel);
             channels.setSelectedComponent(panel);
@@ -283,6 +251,7 @@ public class MainFrame extends JFrame {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
             if (channel.getChannelID() == channelID) {
                 channels.remove(channel);
+                client.removeChannelHeartbeat(channelID);
             }
         }
     }
