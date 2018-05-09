@@ -114,7 +114,7 @@ public class Server {
                 heartbeatManager.clean();
                 for (Channel channel : channels.values()) {
                   Optional<HashSet<InetSocketAddress>> clients = heartbeatManager.getActiveClients(channel.channelID);
-                  clients.ifPresent(channel::update);
+                  channel.update(clients.orElse(new HashSet<>()));
                 }
                 SocketRequest receive;
                 int packetsRead = 0;
