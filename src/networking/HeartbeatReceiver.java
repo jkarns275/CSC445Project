@@ -61,11 +61,9 @@ class HeartbeatReceiver {
     while(!leastRecentHeartbeat.isEmpty()) {
       c = leastRecentHeartbeat.peek();
       long timedif = Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond();
-      if (c != null && Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond() > HEARTBEAT_MAX) {
+      if (Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond() > HEARTBEAT_MAX) {
         c = leastRecentHeartbeat.poll();
         clients.remove(c.address);
-      } else {
-        break;
       }
     }
   }
@@ -76,8 +74,10 @@ class HeartbeatReceiver {
    * @param socketAddress
    */
   public void processHeartbeat(InetSocketAddress socketAddress) {
+    if (socketAddress == null) { return; }
     Client c = new Client(socketAddress, Instant.now());
-    leastRecentHeartbeat.remove(c);
+    if (leastRecentHeartbeat.contains(c))
+      leastRecentHeartbeat.remove(c);
     leastRecentHeartbeat.add(c);
     clients.add(socketAddress);
   }

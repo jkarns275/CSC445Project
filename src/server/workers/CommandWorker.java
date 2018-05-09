@@ -76,10 +76,11 @@ public class CommandWorker implements Runnable {
                 user.setMuted(false);
                 msgID = channel.getAndIncrementMsgID();
                 channel.incrementLastLoggedMsg(1);
+                /*
                 infoHeader = new InfoHeader(channel.channelID, (byte) 0x02, msgID, "User, " + command[2]
                   + ", unmuted in channel, " + channel.channelID + ".");
                 channel.sendPacket(infoHeader, user.address);
-
+                */
                 infoHeader = new InfoHeader(channel.channelID, (byte) 0x03, msgID, "User, " + command[2]
                   + ", unmuted in channel, " + channel.channelID + ".");
                 channel.addToBufferedTreeMap(msgID, infoHeader);
