@@ -303,6 +303,12 @@ public class Client implements Runnable {
     this.joinRecvQueue.forEach((timeSent, joinHeader) -> {
       if (this.sourcesReceived.containsKey(joinHeader.getChannelName())) {
         SourceHeader sourceHeader = this.sourcesReceived.get(joinHeader.getChannelName());
+        try {
+          addChannelHeartbeat(sourceHeader.getChannelID());
+        } catch (InterruptedException e) {
+          System.out.println("Failed to add channel heartbeat");
+          e.printStackTrace();
+        }
         this.joinHeadersToPurge.add(timeSent);
         GUI.getInstance().addChannel(new ChannelPanel(sourceHeader.getChannelID(), sourceHeader.getChannelName(),
           sourceHeader.getAssignedUsername()));

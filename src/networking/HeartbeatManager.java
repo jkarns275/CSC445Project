@@ -1,11 +1,39 @@
 package networking;
 
+import common.Constants;
+import networking.headers.HeartbeatHeader;
+
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeartbeatManager {
 
+  private static final long UPDATE_FREQUENCY = Constants.SECONDS_TO_NANOS * 1;
+
   private final HashMap<Long, HeartbeatReceiver> receivers = new HashMap<>();
+
+  private final AtomicBoolean shouldKill = new AtomicBoolean(false);
+
+  private class HeartbeatWorker implements Runnable {
+    private final AtomicBoolean shouldKill;
+    private final HeartbeatManager heartbeatManager;
+    public HeartbeatWorker(AtomicBoolean shouldkill, HeartbeatManager heartbeatManager) {
+      this.shouldKill = shouldkill;
+      this.heartbeatManager = heartbeatManager;
+    }
+
+    @Override
+    public void run() {
+      long lastUpdateTime = 0;
+      while (!shouldKill.get()) {
+        if (System.nanoTime() - lastUpdateTime > UPDATE_FREQUENCY) {
+          heartbeatManager.update();
+        }
+      }
+    }
+
+  };
 
   public HeartbeatManager() { }
 

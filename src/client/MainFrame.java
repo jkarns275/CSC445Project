@@ -240,12 +240,6 @@ public class MainFrame extends JFrame {
      * @param panel ChannelPanel representing some channel
      */
     public void addChannel(ChannelPanel panel) {
-      try {
-        client.addChannelHeartbeat(panel.getChannelID());
-      } catch (InterruptedException e) {
-        System.out.println("Failed to add channel heartbeat");
-        e.printStackTrace();
-      }
       SwingUtilities.invokeLater(() -> {
             channels.addTab(panel.getChannelName(), panel);
             channels.setSelectedComponent(panel);
