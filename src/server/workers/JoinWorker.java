@@ -41,6 +41,7 @@ public class JoinWorker implements Runnable {
                 packetSender.run();
                 InfoHeader info = new InfoHeader(channel.channelID, InfoHeader.INFO_SERVER_MSG, -1,
                   "User " + assignedUsername + " has joined.");
+
                 break;
             }
         }
