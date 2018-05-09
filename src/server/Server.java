@@ -148,7 +148,8 @@ public class Server {
                             break;
 
                         case OP_HEARTBEAT:
-                            executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header, srcAddr));
+                            HeartbeatHeader heartbeatHeader = (HeartbeatHeader) header;
+                            heartbeatManager.processHeartbeat(heartbeatHeader.getChannelID(), srcAddr);
                             break;
 
                         case OP_COMMAND:
