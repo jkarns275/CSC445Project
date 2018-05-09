@@ -66,7 +66,7 @@ class HeartbeatReceiver {
    * channelID specified in the header corresponds to this HeartbeatReceiver.
    * @param socketAddress
    */
-  public void processHeartbeat(InetSocketAddress socketAddress) {
+  public synchronized void processHeartbeat(InetSocketAddress socketAddress) {
     if (socketAddress == null) { return; }
     Client c = new Client(socketAddress, Instant.now());
     if (leastRecentHeartbeat.contains(c))

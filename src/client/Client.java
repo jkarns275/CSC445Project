@@ -29,7 +29,7 @@ public class Client implements Runnable {
   private final InetSocketAddress server;
   private final HeartbeatManager heartbeatManager;
   private final ExecutorService pool = Executors.newFixedThreadPool(CLIENT_PARALLELISM);
-  private final int timeout = 6000;
+  private final int timeout = 2000;
   private final AtomicBoolean shouldKill = new AtomicBoolean(false);
 
   // Maps (Channel ID) -> (Nickname for this client in that channel)
