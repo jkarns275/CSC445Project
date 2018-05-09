@@ -45,8 +45,7 @@ public class Channel {
     public synchronized String addUser(User user) {
         for (User u : users.values()) {
             if (u.address.getAddress().equals(user.address.getAddress()) && u.address.getPort() == user.address.getPort()) {
-                this.removeUser(u);
-                break;
+                return null;
             }
         }
         String assignedUsername = user.username;
