@@ -7,6 +7,7 @@ import networking.headers.HeartbeatHeader;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,9 +23,9 @@ public class HeartbeatManager {
   private class HeartbeatWorker implements Runnable {
     private final AtomicBoolean shouldKill;
     private final HeartbeatManager heartbeatManager;
-    private final SynchronousQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue;
+    private final LinkedBlockingQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue;
     public HeartbeatWorker(AtomicBoolean shouldkill, HeartbeatManager heartbeatManager,
-                           SynchronousQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue) {
+                           LinkedBlockingQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue) {
       this.shouldKill = shouldkill;
       this.heartbeatManager = heartbeatManager;
       this.heartbeatQueue = heartbeatQueue;
@@ -54,7 +55,7 @@ public class HeartbeatManager {
 
   }
 
-  private SynchronousQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue = new SynchronousQueue<>();
+  private LinkedBlockingQueue<Tuple<Long, InetSocketAddress>> heartbeatQueue = new LinkedBlockingQueue<>();
   private HeartbeatWorker heartbeatWorker = new HeartbeatWorker(shouldKill, this, heartbeatQueue);
   private Thread heartbeatWorkerThread = new Thread(heartbeatWorker);
 
