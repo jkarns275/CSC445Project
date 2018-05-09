@@ -9,7 +9,7 @@ import java.util.*;
  */
 class HeartbeatReceiver {
 
-  public static int HEARTBEAT_MAX = 2;
+  public static int HEARTBEAT_MAX = 3;
 
   private class Client implements Comparable<Client> {
     public InetSocketAddress address;

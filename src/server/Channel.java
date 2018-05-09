@@ -123,7 +123,10 @@ public class Channel {
         users.forEach((_nickname, user) -> {
           if (!heartbeatClients.contains(user.address)) usersToPurge.add(user);
         });
-        for (User user: usersToPurge) removeUser(user);
+        for (User user: usersToPurge) {
+          System.out.println("Removing user \"" + user.username + "\" at address " + user.address.toString());
+          removeUser(user);
+        }
     }
 
     public synchronized void log(Long msgID, Header header) throws FileNotFoundException {
