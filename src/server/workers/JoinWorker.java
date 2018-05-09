@@ -27,7 +27,7 @@ public class JoinWorker implements Runnable {
 
         for (Channel channel : Server.channels.values()) {
             if (channel.channelName.equals(joinHeader.getChannelName())) {
-                channel.update(Server.heartbeatManager.getActiveClients(channel.channelID).orElse(new HashSet<>()));
+                Server.heartbeatManager.processHeartbeat(channel.channelID, address);
                 channelExists = true;
                 String assignedUsername = channel.addUser(user);
                 if (assignedUsername == null) {
