@@ -118,7 +118,7 @@ public class Server {
                 }
                 SocketRequest receive;
                 int packetsRead = 0;
-                while ((receive = headerManager.recv()) != null && packetsRead < 16) {
+                while ((receive = headerManager.recv()) != null && packetsRead < 1) {
                   packetsRead += 1;
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
