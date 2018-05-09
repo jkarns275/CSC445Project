@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeartbeatManager {
@@ -33,16 +34,20 @@ public class HeartbeatManager {
     public void run() {
       long lastUpdateTime = 0;
       while (!shouldKill.get()) {
-        if (System.nanoTime() - lastUpdateTime > UPDATE_FREQUENCY) {
-          heartbeatManager.update();
-          heartbeatManager.clean();
-        }
+        heartbeatManager.update();
+        heartbeatManager.clean();
         Tuple<Long, InetSocketAddress> item;
+
         for (int i = 0; i < 8; i++) {
-          if ((item = heartbeatQueue.poll()) != null)
+          if ((item = heartbeatQueue.poll()) != null) {
+            if (!heartbeatManager.receivers.containsKey(item.first()))
+              heartbeatManager.receivers.put(item.first(), new HeartbeatReceiver());
             heartbeatManager.receivers
-              .getOrDefault(item.first(), new HeartbeatReceiver())
+              .get(item.first())
               .processHeartbeat(item.second());
+          } else {
+            break;
+          }
         }
       }
     }

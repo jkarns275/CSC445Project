@@ -20,14 +20,15 @@ public class WriteWorker implements Runnable {
     public void run() {
         Channel channel = Server.getChannel(writeHeader.getChannelID());
         if (channel != null) {
-            if (channel.users.get(writeHeader.getUsername()) == null) return;
+            if (channel.users.get(writeHeader.getUsername()) == null) {
+              return;
+            }
             if (channel.users.get(writeHeader.getUsername()).getMuted()) return;
             writeHeader.setMsgID(channel.getAndIncrementMsgID());
             channel.incrementLastLoggedMsg(1);
             channel.addToBufferedTreeMap(writeHeader.getMsgID(), writeHeader);
             channel.sendPacket(writeHeader);
         } else {
-            System.out.println("Channel is null");
             ErrorHeader header = new ErrorHeader((byte)0x02,"No such channel exists");
             PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
             packetSender.run();

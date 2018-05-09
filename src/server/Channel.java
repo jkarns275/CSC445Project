@@ -1,5 +1,6 @@
 package server;
 
+import common.Constants;
 import networking.MulticastPacketSender;
 import networking.PacketSender;
 import networking.headers.Header;
@@ -28,7 +29,7 @@ public class Channel {
     private ArrayList<String> usernames = new ArrayList<>();
     private ArrayList<User> usersToPurge = new ArrayList<>();
 
-    /*
+  /*
      * TreeMap buffering messages sent from the server to clients in the given channel.
      */
     private TreeMap<Long,BufferedMessageEntry> bufferedMessages = new TreeMap<>();
@@ -119,8 +120,10 @@ public class Channel {
             }
         }
         usersToPurge.clear();
+        long now = System.nanoTime();
         users.forEach((_nickname, user) -> {
-          if (!heartbeatClients.contains(user.address)) usersToPurge.add(user);
+          if (!heartbeatClients.contains(user.address) && now - user.joinTime > Constants.SECONDS_TO_NANOS)
+            usersToPurge.add(user);
         });
         for (User user: usersToPurge) {
           System.out.println("Removing user \"" + user.username + "\" at address " + user.address.toString());

@@ -212,7 +212,6 @@ public class MainFrame extends JFrame {
         final DatagramPacket toSend = new DatagramPacket(bo.toByteArray(), bo.size());
         host.send(toSend);
         } catch (Exception e) {
-          System.out.println("Sad!");
         }
       }
 
@@ -228,7 +227,6 @@ public class MainFrame extends JFrame {
           final ObjectInputStream oi = new ObjectInputStream(bi);
           replies.add(oi.readLong());
         } catch (Exception e) {
-          System.out.println("Sad!");
         }
       }
       long numGreater = replies.stream().reduce(0L, (acc, i) -> i > prop ? acc + 1 : acc);
@@ -270,7 +268,6 @@ public class MainFrame extends JFrame {
             }
         }
         // no such channel
-      //System.out.println("channelID: " + channelID + ", nick: " + nick);
       //client.sendErrorHeader((byte) 2, "No Such Channel");
     }
 

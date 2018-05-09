@@ -107,17 +107,19 @@ public class Server {
      *
      */
     public void listen() {
+        long lastChannelUpdateTime = 0;
+        long nanoTime = System.nanoTime();
         while (true) {
             try {
                 headerManager.update();
                 for (Channel channel : channels.values()) {
                   Optional<HashSet<InetSocketAddress>> clients = heartbeatManager.getActiveClients(channel.channelID);
-//                  channel.update(clients.orElse(new HashSet<>()));
-                  clients.ifPresent(channel::update);
+                  channel.update(clients.orElse(new HashSet<>()));
                 }
                 SocketRequest receive;
                 int packetsRead = 0;
-                while ((receive = headerManager.recv()) != null && packetsRead++ < 16) {
+                while ((receive = headerManager.recv()) != null && packetsRead < 16) {
+                  packetsRead += 1;
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
 
@@ -147,8 +149,7 @@ public class Server {
                             break;
 
                         case OP_HEARTBEAT:
-                            HeartbeatHeader heartbeatHeader = (HeartbeatHeader) header;
-                            heartbeatManager.processHeartbeat(heartbeatHeader.getChannelID(), srcAddr);
+                            executorPool.execute(new HeartbeatWorker((HeartbeatHeader) header, srcAddr));
                             break;
 
                         case OP_COMMAND:

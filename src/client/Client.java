@@ -27,7 +27,6 @@ public class Client implements Runnable {
   private final HeaderIOManager hio;
   private final SocketManager socket;
   private final InetSocketAddress server;
-  private final HeartbeatManager heartbeatManager;
   private final ExecutorService pool = Executors.newFixedThreadPool(CLIENT_PARALLELISM);
   private final int timeout = 2000;
   private final AtomicBoolean shouldKill = new AtomicBoolean(false);
@@ -53,7 +52,6 @@ public class Client implements Runnable {
     this.hio = new HeaderIOManager(new InetSocketAddress(port), 8);
     this.socket = this.hio.getSocket();
     this.heartbeatSender = new HeartbeatSender(this.socket, server);
-    this.heartbeatManager = new HeartbeatManager();
   }
 
   @Override
@@ -74,7 +72,6 @@ public class Client implements Runnable {
             retries.add(new Tuple<>(channelName, GUI.getInstance().getChannelNick(channelID)));
             m.removeChannel(channelID);
             heartbeatSender.removeChannel(channelID);
-            System.out.println("hey!");
           });
           channels.clear();
         } else if (!this.retries.isEmpty()) {
@@ -88,12 +85,6 @@ public class Client implements Runnable {
 
         this.hio.update();
         this.heartbeatSender.update();
-        this.heartbeatManager.update();
-
-        if (nanoTime - last > Client.HEARTBEAT_MANAGER_CLEAN_DELAY) {
-          this.heartbeatManager.clean();
-          last = nanoTime;
-        }
 
         updateWriteRecvQueue();
         updateJoinRecvQueue();
@@ -144,13 +135,8 @@ public class Client implements Runnable {
                     notifyAll();
                 }*/
                 break;
-           case OP_HEARTBEAT:
-              HeartbeatHeader heartbeatHeader = (HeartbeatHeader) header;
-              this.heartbeatManager.processHeartbeat(heartbeatHeader.getChannelID(), srcAddr);
-              break;
             case OP_INFO:
                 InfoHeader infoHeader = (InfoHeader) header;
-              System.out.println("Received info header [msg = " + infoHeader.getMessage() + "]");
                 pool.submit(() -> handleInfo(infoHeader));
                 break;
             case OP_ACK:
@@ -165,6 +151,7 @@ public class Client implements Runnable {
             case OP_JOIN:
             case OP_LEAVE:
             case OP_COMMAND:
+            case OP_HEARTBEAT:
             case OP_CONG:
             default:
               System.err.println("Received header from server with invalid opcode: " + header.opcode());
@@ -228,11 +215,6 @@ public class Client implements Runnable {
 
   public void removeChannelHeartbeat(long channelID) {
     this.heartbeatSender.removeChannel(channelID);
-  }
-
-  public boolean isServerAlive() {
-    Optional<HashSet<InetSocketAddress>> result = heartbeatManager.getActiveClients(Constants.CLIENT_HEARTBEAT_CHANNEL);
-    return result.isPresent() && result.get().size() > 0;
   }
 
   /*
@@ -306,7 +288,6 @@ public class Client implements Runnable {
         try {
           addChannelHeartbeat(sourceHeader.getChannelID());
         } catch (InterruptedException e) {
-          System.out.println("Failed to add channel heartbeat");
           e.printStackTrace();
         }
         this.joinHeadersToPurge.add(timeSent);
