@@ -143,6 +143,7 @@ public class Client implements Runnable {
               break;
             case OP_INFO:
                 InfoHeader infoHeader = (InfoHeader) header;
+              System.out.println("Received info header [msg = " + infoHeader.getMessage() + "]");
                 pool.submit(() -> handleInfo(infoHeader));
                 break;
             case OP_ACK:
