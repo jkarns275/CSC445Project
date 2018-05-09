@@ -85,7 +85,7 @@ public class HeartbeatManager {
 
   public void processHeartbeat(long channelID, InetSocketAddress address) {
     try {
-      this.heartbeatQueue.put(new Tuple<>(channelID, address));
+      this.heartbeatQueue.offer(new Tuple<>(channelID, address));
     } catch (Exception e) {
       System.out.println("Failed to process heartbeat!");
     }

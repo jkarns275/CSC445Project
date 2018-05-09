@@ -116,16 +116,17 @@ public class Server {
                   Optional<HashSet<InetSocketAddress>> clients = heartbeatManager.getActiveClients(channel.channelID);
                   channel.update(clients.orElse(new HashSet<>()));
                 }
-                SocketRequest receive;
-                int packetsRead = 0;
-                while ((receive = headerManager.recv()) != null && packetsRead < 1) {
-                  packetsRead += 1;
+                SocketRequest receive = headerManager.recv();
+//                int packetsRead = 0;
+                //while ((receive = headerManager.recv()) != null && packetsRead < 1) {
+//                  packetsRead += 1;
+                if (receive == null) continue;
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
 
-                    if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
-                        continue;
-                    }
+//                    if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
+//                        continue;
+//                    }
 
                     switch (header.opcode()) {
                         case OP_WRITE:
@@ -169,7 +170,7 @@ public class Server {
                             ErrorHeader errorHeader = new ErrorHeader((byte)0x01,"Invalid opcode");
                             executorPool.execute(new ErrorWorker(errorHeader, srcAddr));
                     }
-                }
+                //}
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
