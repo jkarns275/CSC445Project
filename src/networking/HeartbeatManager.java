@@ -38,8 +38,7 @@ public class HeartbeatManager {
 
         for (int i = 0; i < 32; i++) {
           try {
-            if ((item = heartbeatQueue.take()) != null) {
-              System.out.println("looking at " + item.second());
+            if ((item = heartbeatQueue.poll(5, TimeUnit.MILLISECONDS)) != null) {
               if (!heartbeatManager.receivers.containsKey(item.first()))
                 heartbeatManager.receivers.put(item.first(), new HeartbeatReceiver());
               heartbeatManager.receivers
@@ -71,7 +70,6 @@ public class HeartbeatManager {
   public void update() {
     for (HeartbeatReceiver hr : this.receivers.values()) {
       hr.update();
-      System.out.println("Clients: " + hr.getClients());
     }
   }
 
@@ -96,7 +94,6 @@ public class HeartbeatManager {
     HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
     if (heartbeatReceiver != null) {
       Optional<HashSet<InetSocketAddress>> p = Optional.of(new HashSet<InetSocketAddress>(heartbeatReceiver.getClients()));
-//      System.out.println("p: " + p);
       return p;
     } else {
       return Optional.empty();
