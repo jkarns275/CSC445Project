@@ -344,7 +344,7 @@ public class MainFrame extends JFrame {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
             if (channel.getChannelID() == channelID) {
                 channels.remove(channel);
-                client.removeChannelHeartbeat(channelID);
+                client.removeChannel(channelID);
                 return;
             }
         }
