@@ -1,5 +1,8 @@
 package common;
 
+/**
+ * Fun.
+ */
 public class Constants {
   // Opcode values.
   public final static int OP_WRITE =               0x00;

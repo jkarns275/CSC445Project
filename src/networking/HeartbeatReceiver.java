@@ -11,7 +11,7 @@ import java.util.*;
  */
 class HeartbeatReceiver {
 
-  public static long HEARTBEAT_MAX = 1 * Constants.SECONDS_TO_NANOS;
+  public static long HEARTBEAT_MAX = 4 * Constants.SECONDS_TO_NANOS;
 
   private class Client {
     public InetSocketAddress address;
