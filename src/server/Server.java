@@ -124,9 +124,9 @@ public class Server {
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
 
-//                    if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
-//                        continue;
-//                    }
+                    if (!users.contains(srcAddr) && header.opcode() != Constants.OP_JOIN) {
+                        continue;
+                    }
 
                     switch (header.opcode()) {
                         case OP_WRITE:
