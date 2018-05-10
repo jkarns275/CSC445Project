@@ -11,7 +11,10 @@ import java.util.*;
  */
 class HeartbeatReceiver {
 
-  public static long HEARTBEAT_MAX = 1 * Constants.SECONDS_TO_NANOS;
+  /**
+   * The maximum amount of time
+   */
+  public static long HEARTBEAT_MAX = 4 * Constants.SECONDS_TO_NANOS;
 
   private class Client {
     public InetSocketAddress address;
@@ -79,10 +82,16 @@ class HeartbeatReceiver {
       clients.put(socketAddress, new Client(socketAddress, now));
   }
 
+  /**
+   * @param clientAddress the client to remove.
+   */
   public void removeClient(InetSocketAddress clientAddress) {
     clients.remove(clientAddress);
   }
 
+  /**
+   * @return all of the clients for this HeartbeatReceiver / channel.
+   */
   public HashSet<InetSocketAddress> getClients() {
     return new HashSet<>(clients.keySet());
   }

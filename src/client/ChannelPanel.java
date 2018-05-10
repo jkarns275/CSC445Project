@@ -22,6 +22,7 @@ public class ChannelPanel extends JPanel {
     private JScrollPane scrollPane;
     private SortedSet<Message> messages;
     private long firstMessageID = -1;
+    private long errorID = 0;
     //private JTextArea onlineUsers;
 
     /**
@@ -75,7 +76,6 @@ public class ChannelPanel extends JPanel {
 
     private void updateDisplay() {
         chatArea.setText("");
-
         String newContent =
             messages.stream()
             .map((msg) -> String.format("[%3d] %19s| %s\n", msg.getId(), msg.getNick(), msg.getContent()))
@@ -144,7 +144,7 @@ public class ChannelPanel extends JPanel {
 
     // for printing messages to message channel
     void addMessage(String name, String message) {
-        messages.add(new Message(name, message));
+        messages.add(new Message(errorID++, name, message));
         updateDisplay();
     }
 

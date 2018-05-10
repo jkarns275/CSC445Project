@@ -126,7 +126,7 @@ public class Client implements Runnable {
               // for a writeHeader with the same magic value.
               if (username != null && username.equals(writeHeader.getUsername()) &&
                   this.writeRecvQueue.containsKey(writeHeader.getMagic())) {
-                this.writeRecvQueue.remove(writeHeader.getMagic());
+                  this.writeRecvQueue.remove(writeHeader.getMagic());
               }
               // Display the message either way
               pool.submit(() -> GUI.writeMessage( writeHeader.getChannelID(), writeHeader.getMsgID(),
@@ -198,6 +198,7 @@ public class Client implements Runnable {
    */
   public void handleInfo(InfoHeader infoHeader) {
       long channelID = infoHeader.getChannelID();
+      String message = infoHeader.getMessage();
       switch (infoHeader.getInfoCode()) {
           case 0: // user kicked
               GUI.kickUser(channelID);
@@ -381,6 +382,7 @@ public class Client implements Runnable {
         this.joinHeadersToPurge.add(timeSent);
         GUI.getInstance().addChannel(new ChannelPanel(sourceHeader.getChannelID(), sourceHeader.getChannelName(),
           sourceHeader.getAssignedUsername()));
+        channels.put(sourceHeader.getChannelID(),sourceHeader.getAssignedUsername());
         this.sourcesReceived.remove(joinHeader.getChannelName());
       }
     });

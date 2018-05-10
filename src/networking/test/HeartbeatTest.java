@@ -64,7 +64,6 @@ public class HeartbeatTest {
               if (sr.getHeader().opcode() == Constants.OP_HEARTBEAT) {
                 HeartbeatHeader heartbeatHeader = (HeartbeatHeader) sr.getHeader();
                 manager.processHeartbeat(heartbeatHeader.getChannelID(), sr.getAddress());
-                System.out.println(heartbeatHeader.getChannelID());
               }
             }
           } catch (InterruptedException ignored) {
