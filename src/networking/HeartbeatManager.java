@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeartbeatManager {
 
-  private static final long UPDATE_FREQUENCY = Constants.SECONDS_TO_NANOS * 1;
+  private static final long UPDATE_FREQUENCY = Constants.SECONDS_TO_NANOS * 4;
 
   private final ConcurrentHashMap<Long, HeartbeatReceiver> receivers = new ConcurrentHashMap<>();
 
@@ -38,7 +38,7 @@ public class HeartbeatManager {
 
         for (int i = 0; i < 32; i++) {
           try {
-            if ((item = heartbeatQueue.poll(5, TimeUnit.MILLISECONDS)) != null) {
+            if ((item = heartbeatQueue.poll(2, TimeUnit.MILLISECONDS)) != null) {
               if (!heartbeatManager.receivers.containsKey(item.first()))
                 heartbeatManager.receivers.put(item.first(), new HeartbeatReceiver());
               heartbeatManager.receivers
@@ -49,6 +49,7 @@ public class HeartbeatManager {
             }
           } catch (InterruptedException e) {
             e.printStackTrace();
+            break;
           }
         }
       }
