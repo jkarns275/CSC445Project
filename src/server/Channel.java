@@ -25,7 +25,7 @@ public class Channel {
 
     public String channelName;
     private File log;
-    public HashMap<String, User> users = new HashMap<>();
+    private HashMap<String, User> users = new HashMap<>();
     private ArrayList<String> usernames = new ArrayList<>();
     private ArrayList<User> usersToPurge = new ArrayList<>();
 
@@ -103,7 +103,7 @@ public class Channel {
         lastLoggedMsg += increment;
     }
 
-    public void update(HashSet<InetSocketAddress> heartbeatClients) {
+    public synchronized void update(HashSet<InetSocketAddress> heartbeatClients) {
         Calendar calendar = Calendar.getInstance();
         if (lastLoggedMsg != msgID) {
             for (long index = lastLoggedMsg+1; index != msgID; index++) {
@@ -122,7 +122,7 @@ public class Channel {
         usersToPurge.clear();
         long now = System.nanoTime();
         users.forEach((_nickname, user) -> {
-          if (!heartbeatClients.contains(user.address) && now - user.joinTime > Constants.SECONDS_TO_NANOS)
+          if (!heartbeatClients.contains(user.address) && now - user.joinTime > 8 * Constants.SECONDS_TO_NANOS)
             usersToPurge.add(user);
         });
         for (User user: usersToPurge) {
@@ -148,7 +148,28 @@ public class Channel {
         return this.bufferedMessages.get(msgID);
     }
 
-    public class BufferedMessageEntry implements Comparable<BufferedMessageEntry> {
+  public synchronized User removeUser(String s) {
+    return this.users.remove(s);
+  }
+
+  public synchronized void muteUser(String s) {
+      User u = this.users.get(s);
+      if (u != null) u.setMuted(true);
+  }
+
+  public synchronized boolean containsUser(String s) {
+      return this.users.containsKey(s);
+  }
+
+  public synchronized User getUser(String s) {
+    return this.users.get(s);
+  }
+
+  public ArrayList<String> getUsers() {
+    return new ArrayList<>(this.users.keySet());
+  }
+
+  public class BufferedMessageEntry implements Comparable<BufferedMessageEntry> {
         Header header;
         long militime;
 

@@ -1,5 +1,7 @@
 package networking;
 
+import common.Constants;
+
 import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.util.*;
@@ -9,14 +11,19 @@ import java.util.*;
  */
 class HeartbeatReceiver {
 
-  public static int HEARTBEAT_MAX = 1;
+  public static long HEARTBEAT_MAX = 1 * Constants.SECONDS_TO_NANOS;
 
   private class Client {
     public InetSocketAddress address;
-    private Instant receivedAt;
+    private long receivedAt;
 
-    public Client(InetSocketAddress address, Instant receivedAt) {
+    public Client(InetSocketAddress address, long receivedAt) {
       this.address = address; this.receivedAt = receivedAt;
+    }
+
+    @Override
+    public int hashCode() {
+      return address.hashCode();
     }
 
     @Override
@@ -29,18 +36,18 @@ class HeartbeatReceiver {
       return false;
     }
 
-    public Instant getReceivedAt() {
+    public long getReceivedAt() {
       return receivedAt;
     }
 
-    public void setReceivedAt(Instant receivedAt) {
+    public void setReceivedAt(long receivedAt) {
       this.receivedAt = receivedAt;
     }
   }
 
 
-  private final HashSet<InetSocketAddress> clients = new HashSet<>();
-  private final ArrayDeque<Client> leastRecentHeartbeat = new ArrayDeque<>();
+  private final HashMap<InetSocketAddress, Client> clients = new HashMap<>();
+  private final ArrayList<InetSocketAddress> clientsToPurge = new ArrayList<>();
 
   /**
    * Check the priority queue to see if there are any clients who haven't send a heartbeat
@@ -49,16 +56,13 @@ class HeartbeatReceiver {
    * This should be called at least every couple of seconds
    */
   public void update() {
-    Client c;
-    // Remove all invalid clients.
-    while(!leastRecentHeartbeat.isEmpty()) {
-      c = leastRecentHeartbeat.peek();
-      long timedif = Instant.now().getEpochSecond() - c.receivedAt.getEpochSecond();
-      if (timedif > HEARTBEAT_MAX) {
-        c = leastRecentHeartbeat.poll();
-        clients.remove(c.address);
-      }
-    }
+    long now = System.nanoTime();
+    clientsToPurge.clear();
+    clients.forEach((address, client) -> {
+      if (now - client.receivedAt > HEARTBEAT_MAX)
+        clientsToPurge.add(address);
+    });
+    clientsToPurge.forEach(clients::remove);
   }
 
   /**
@@ -66,21 +70,20 @@ class HeartbeatReceiver {
    * channelID specified in the header corresponds to this HeartbeatReceiver.
    * @param socketAddress
    */
-  public synchronized void processHeartbeat(InetSocketAddress socketAddress) {
-    if (socketAddress == null) { return; }
-    Client c = new Client(socketAddress, Instant.now());
-    if (leastRecentHeartbeat.contains(c))
-      leastRecentHeartbeat.remove(c);
-    leastRecentHeartbeat.offer(c);
-    clients.add(socketAddress);
+  public void processHeartbeat(InetSocketAddress socketAddress) {
+    long now = System.nanoTime();
+    if (socketAddress == null) return;
+    if (clients.containsKey(socketAddress))
+      clients.get(socketAddress).setReceivedAt(now);
+    else
+      clients.put(socketAddress, new Client(socketAddress, now));
   }
 
   public void removeClient(InetSocketAddress clientAddress) {
-    leastRecentHeartbeat.remove(new Client(clientAddress, Instant.now()));
     clients.remove(clientAddress);
   }
 
   public HashSet<InetSocketAddress> getClients() {
-    return new HashSet<>(clients);
+    return new HashSet<>(clients.keySet());
   }
 }

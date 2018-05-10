@@ -250,6 +250,7 @@ public class MainFrame extends JFrame {
             if (channel.getChannelID() == channelID) {
                 channels.remove(channel);
                 client.removeChannelHeartbeat(channelID);
+                return;
             }
         }
     }

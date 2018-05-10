@@ -81,7 +81,7 @@ public class JoinTwiceTest {
                         servercontains = true;
                     }
                     if (Server.getChannel((long) 1) != null) {
-                        if (Server.getChannel((long) 1).users.containsKey("Ben")) {
+                        if (Server.getChannel((long) 1).containsUser("Ben")) {
                             channelcontains = true;
                         }
                     }

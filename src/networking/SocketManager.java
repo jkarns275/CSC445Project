@@ -57,6 +57,7 @@ public class SocketManager {
 
             final DatagramPacket toSend = new DatagramPacket(bout.toByteArray(), bout.size());
             toSend.setSocketAddress(job.getAddress());
+//            System.out.println("Sending: " + job.getHeader());
             socket.send(toSend);
             this.lastSendWasSuccessfull.set(true);
           }
@@ -75,7 +76,7 @@ public class SocketManager {
           final Header header = HeaderFactory.getInstance().readHeader(in);
           final InetSocketAddress src = new InetSocketAddress(received.getAddress(), received.getPort());
           receivedItems.put(job(header, src));
-          System.out.println("Received: " + header);
+//          System.out.println("Received: " + header);
 //          System.out.println("Received header with opcode " + header.opcode() + " from host " + src);
           if (header.opcode() != Constants.OP_ACK && header.opcode() != Constants.OP_HEARTBEAT) {
 //            System.out.println("Sending ACK");

@@ -74,16 +74,16 @@ public class JoinTenTimesTest {
                         servercontains = true;
                     }
                     if (Server.getChannel((long) 1) != null) {
-                        if (Server.getChannel((long) 1).users.containsKey("Ben") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben1") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben2") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben3") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben4") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben5") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben6") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben7") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben8") &&
-                                Server.getChannel((long) 1).users.containsKey("Ben9")) {
+                        if (Server.getChannel((long) 1).containsUser("Ben") &&
+                                Server.getChannel((long) 1).containsUser("Ben1") &&
+                                Server.getChannel((long) 1).containsUser("Ben2") &&
+                                Server.getChannel((long) 1).containsUser("Ben3") &&
+                                Server.getChannel((long) 1).containsUser("Ben4") &&
+                                Server.getChannel((long) 1).containsUser("Ben5") &&
+                                Server.getChannel((long) 1).containsUser("Ben6") &&
+                                Server.getChannel((long) 1).containsUser("Ben7") &&
+                                Server.getChannel((long) 1).containsUser("Ben8") &&
+                                Server.getChannel((long) 1).containsUser("Ben9")) {
                             channelcontains = true;
                         }
                     }

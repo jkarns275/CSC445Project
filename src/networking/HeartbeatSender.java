@@ -12,7 +12,7 @@ import java.util.HashSet;
  */
 public class HeartbeatSender {
 
-  private final static long HEARTBEAT_INTERVAL = Constants.SECONDS_TO_NANOS / 4; // Every 8 seconds
+  private final static long HEARTBEAT_INTERVAL = Constants.SECONDS_TO_NANOS / 8; // Every 8 seconds
 
   private final ArrayList<Long> channels = new ArrayList<>();
   private final SocketManager socket;

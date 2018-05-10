@@ -36,7 +36,7 @@ public class CommandWorker implements Runnable {
             User user;
             switch (command[1]) {
               case "kick":
-                user = channel.users.remove(command[2]);
+                user = channel.removeUser(command[2]);
                 msgID = channel.getAndIncrementMsgID();
                 channel.incrementLastLoggedMsg(1);
                 infoHeader = new InfoHeader(channel.channelID, (byte) 0x00, msgID, "User, " + command[2]
@@ -50,14 +50,15 @@ public class CommandWorker implements Runnable {
                 break;
 
               case "mute":
-                user = channel.users.get(command[2]);
-                if (user != null) {
-                  user.setMuted(true);
+                if (channel == null) break;
+                if (channel.containsUser(command[2])) {
+                  User u = channel.getUser(command[2]);
+                  u.setMuted(true);
                   msgID = channel.getAndIncrementMsgID();
                   channel.incrementLastLoggedMsg(1);
                   infoHeader = new InfoHeader(channel.channelID, (byte) 0x01, msgID, "User, " + command[2]
                     + ", muted in channel, " + channel.channelID + ".");
-                  channel.sendPacket(infoHeader, user.address);
+                  channel.sendPacket(infoHeader, u.address);
 
                   infoHeader = new InfoHeader(channel.channelID, (byte) 0x03, msgID, "User, " + command[2]
                     + ", muted in channel, " + channel.channelID + ".");
@@ -71,7 +72,7 @@ public class CommandWorker implements Runnable {
                 break;
 
               case "unmute":
-                user = channel.users.get(command[2]);
+                user = channel.getUser(command[2]);
                 user.setMuted(false);
                 msgID = channel.getAndIncrementMsgID();
                 channel.incrementLastLoggedMsg(1);
@@ -89,7 +90,7 @@ public class CommandWorker implements Runnable {
             }
           } else if (command[0].equals("/listusers")) {
             StringBuilder sb = new StringBuilder("Users: ");
-            channel.users.keySet().stream().forEach((username) -> {
+            channel.getUsers().forEach((username) -> {
                 sb.append(username);
                 sb.append(", ");
             });

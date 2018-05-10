@@ -19,8 +19,9 @@ public class LeaveWorker implements Runnable {
     }
 
     public void run() {
+      /*
         Channel channel = Server.channels.get(leaveHeader.channelID);
-        String userNickname = channel.users.values().stream()
+        String userNickname = channel.getUsers().values().stream()
           .filter((User u) -> u.address.equals(address)).findAny()
           .map(u -> u.username)
           .orElse("Mystery");
@@ -36,5 +37,6 @@ public class LeaveWorker implements Runnable {
           .findFirst();
 
         user.ifPresent(channel::removeUser);
+        */
     }
 }

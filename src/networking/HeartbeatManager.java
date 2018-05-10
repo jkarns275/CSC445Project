@@ -6,10 +6,7 @@ import networking.headers.HeartbeatHeader;
 
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HeartbeatManager {
@@ -34,14 +31,15 @@ public class HeartbeatManager {
     @Override
     public void run() {
       long lastUpdateTime = 0;
+      Tuple<Long, InetSocketAddress> item;
       while (!shouldKill.get()) {
         heartbeatManager.update();
         heartbeatManager.clean();
-        Tuple<Long, InetSocketAddress> item;
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 32; i++) {
           try {
             if ((item = heartbeatQueue.take()) != null) {
+              System.out.println("looking at " + item.second());
               if (!heartbeatManager.receivers.containsKey(item.first()))
                 heartbeatManager.receivers.put(item.first(), new HeartbeatReceiver());
               heartbeatManager.receivers
@@ -71,7 +69,10 @@ public class HeartbeatManager {
    * Should be called as frequently as you would like dead clients to be dropped.
    */
   public void update() {
-    for (HeartbeatReceiver hr : this.receivers.values()) hr.update();
+    for (HeartbeatReceiver hr : this.receivers.values()) {
+      hr.update();
+      System.out.println("Clients: " + hr.getClients());
+    }
   }
 
   /*
@@ -94,7 +95,9 @@ public class HeartbeatManager {
   public Optional<HashSet<InetSocketAddress>> getActiveClients(long channelID) {
     HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
     if (heartbeatReceiver != null) {
-      return Optional.of(new HashSet<InetSocketAddress>(heartbeatReceiver.getClients()));
+      Optional<HashSet<InetSocketAddress>> p = Optional.of(new HashSet<InetSocketAddress>(heartbeatReceiver.getClients()));
+//      System.out.println("p: " + p);
+      return p;
     } else {
       return Optional.empty();
     }
