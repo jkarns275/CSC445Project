@@ -5,11 +5,13 @@ import client.reps.Message;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Stream;
 
+/**
+ * GUI element representing an individual channel.
+ * Handles displaying text, and confirming consensus and ordering of messages.
+ */
 public class ChannelPanel extends JPanel {
 
     private final long id;
@@ -38,17 +40,22 @@ public class ChannelPanel extends JPanel {
         initWidgets();
     }
 
+    /**
+     * Check if the user is muted in this channel
+     * @return True if the user is muted
+     */
     public boolean isMuted() {
         return this.isMuted;
     }
 
+    /**
+     * Mute or unmute the user of this channel.
+     * @param status the status of the user on this channel. True if muted, false if not.
+     */
     public void setIsMuted(boolean status) {
         isMuted = status;
     }
 
-    /**
-     * Initialize and configure widgets used in channel interface.
-     */
     private void initWidgets() {
         chatArea = new JTextArea();
         chatArea.setEditable(false);
@@ -119,6 +126,10 @@ public class ChannelPanel extends JPanel {
         updateDisplay();
     }
 
+    /**
+     * Validate the ordering of the messages the client has received on this channel in order to achieve consensus.
+     * @return array containing the identifiers of any missing messages
+     */
     public long[] validateOrdering() {
         long prev = messages.first().getId() - 1;
         for (Message message : messages) {

@@ -13,6 +13,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * Main GUI element for the client side.
+ * Handles routing user input to the correct method in Client class, and managing individual client UI elements.
+ */
 public class MainFrame extends JFrame {
     private static final String HELP_STRING = "This should have a list of commands";
 
@@ -37,9 +41,6 @@ public class MainFrame extends JFrame {
         this.setVisible(true);
     }
 
-    /**
-     * Instantiate all the widgets used in this class.
-     */
     private void initWidgets() {
         channels = new JTabbedPane();
         GridBagConstraints channelsConstraints = new GridBagConstraints();
@@ -244,6 +245,10 @@ public class MainFrame extends JFrame {
         });
     }
 
+    /**
+     * Remove a channel from the GUI.
+     * @param channelID Identifier of the channel
+     */
     public void removeChannel(long channelID) {
         for (int i = 0; i < channels.getTabCount(); i++) {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
@@ -255,6 +260,13 @@ public class MainFrame extends JFrame {
         }
     }
 
+    /**
+     * Display a message on a channel.
+     * @param channelID Identifier of the channel
+     * @param messageID Identifier of the message
+     * @param nick Sender of the message
+     * @param message Contents of the message
+     */
     public void addMessageToChannel(long channelID, long messageID, String nick, String message) {
         for (int i = 0; i < channels.getTabCount(); i++) {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
@@ -272,6 +284,11 @@ public class MainFrame extends JFrame {
       //client.sendErrorHeader((byte) 2, "No Such Channel");
     }
 
+    /**
+     * Set the user's mute status on a channel.
+     * @param channelID Identifier of the channel
+     * @param status New mute status of the user
+     */
     public void setMuteChannel(long channelID, boolean status) {
 
         for (int i = 0; i < channels.getTabCount(); i++) {
@@ -284,6 +301,11 @@ public class MainFrame extends JFrame {
 
     }
 
+    /**
+     * Get the user's nick on a channel
+     * @param channelID Identifier of the channel
+     * @return User's nick on the channel
+     */
     public String getChannelNick(long channelID) {
         for (int i = 0; i < channels.getTabCount(); i++) {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
