@@ -1,3 +1,18 @@
+# Contributions
+
+## Networking
+The networking package was designed and programmed by Joshua Karns.
+
+## Client
+The client was designed and programmed by Ian Ramazan.
+
+## Server
+The server was designed and programmed by Benjamin Valentino.
+
+## Bug fixing
+Bug fixing was done by everyone mentioned above.
+
+
 # Protocol
 `psc` uses a simple protocol on top of `UDP`, using `multicast`.
 
