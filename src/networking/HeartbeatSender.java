@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 /**
- * Sends heartbeats to the specified server for the specified channels every ~8 seconds.
+ * Sends heartbeats to the specified server for the specified channels every 8th of a second.
  */
 public class HeartbeatSender {
 
-  private final static long HEARTBEAT_INTERVAL = Constants.SECONDS_TO_NANOS / 8; // Every 8 seconds
+  private final static long HEARTBEAT_INTERVAL = Constants.SECONDS_TO_NANOS / 8;
 
   private final ArrayList<Long> channels = new ArrayList<>();
   private final SocketManager socket;

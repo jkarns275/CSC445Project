@@ -40,6 +40,11 @@ public class SocketManager {
     this.begin(pool, socket);
   }
 
+  /**
+   * Runs the background thread in supplied thread pool
+   * @param pool
+   * @param socket the socket all data will be sent through.
+   */
   private void begin(ThreadPoolExecutor pool, DatagramSocket socket) {
     pool.execute(() -> {
       final byte[] buffer = new byte[Constants.MAX_HEADER_SIZE];
@@ -99,20 +104,41 @@ public class SocketManager {
     });
   }
 
+  /**
+   * Attempts to queue up a header to be sent.
+   * @param to the destination for the header.
+   * @param header the header in question
+   * @throws InterruptedException if the toSend LinkedBlockingQueue is at capacity.
+   */
   public void send(Header header, InetSocketAddress to) throws InterruptedException {
     if (this.toSend.offer(SocketManager.job(header, to))) return;
     throw new InterruptedException();
   }
 
+  /**
+   * Attempts to queue up a SocketRequest to be sent.
+   * @param sr The SocketRequest to be sent.
+   * @throws InterruptedException if the toSend LinkedBlockingQueue is at capacity.
+   */
   public void send(SocketRequest sr) throws InterruptedException {
     if (this.toSend.offer(sr)) return;
     throw new InterruptedException();
   }
 
+  /**
+   * Attempts to dequeue a SocketRequest
+   * @return a SocketRequest
+   * @throws InterruptedException thrown if there is nothing to be dequeued in the SocketManager
+   */
   public SocketRequest recv() throws InterruptedException {
     return this.receivedItems.poll(100, TimeUnit.MILLISECONDS);
   }
 
+  /**
+   * If the last attempt at sending something through the DatagramSocket was successfull, then we're probably
+   * connected to the internet (or at least some sort of network)!
+   * @return whether we're probably connected to the internet
+   */
   public boolean probablyConnected() {
     return this.lastSendWasSuccessfull.get();
   }

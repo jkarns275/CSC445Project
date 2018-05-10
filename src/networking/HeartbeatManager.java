@@ -9,12 +9,20 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ *   The HeartbeatManager is just a router - it routes heartbeats to their corresponding HeartbeatReceivers (if there
+ *   is one). If there is not one it is ignored. Updating of the HeartbeatReceivers and processing of the heartbeats
+ *   is done in a worker thread.
+ */
 public class HeartbeatManager {
 
   private static final long UPDATE_FREQUENCY = Constants.SECONDS_TO_NANOS * 4;
 
   private final ConcurrentHashMap<Long, HeartbeatReceiver> receivers = new ConcurrentHashMap<>();
 
+  /**
+   * Used to quickly end the HeartbeatWorker thread.
+   */
   public final AtomicBoolean shouldKill = new AtomicBoolean(false);
 
   private class HeartbeatWorker implements Runnable {
@@ -66,23 +74,28 @@ public class HeartbeatManager {
   }
 
   /**
-   * Should be called as frequently as you would like dead clients to be dropped.
+   * Should be called as frequently as you would like dead clients to be dropped. Simply calls update on each
+   * HeartbeatReceiver.
    */
   public void update() {
-    for (HeartbeatReceiver hr : this.receivers.values()) {
+    for (HeartbeatReceiver hr : this.receivers.values())
       hr.update();
-    }
   }
 
   /*
    * Removes all HeartBeat receivers that are empty
    */
-  public void clean() {
+  private void clean() {
     ArrayList<Long> toRemove = new ArrayList<>();
     receivers.forEach((key, value) -> { if (value.getClients().size() == 0) toRemove.add(key); });
     for (Long removeMe : toRemove) receivers.remove(removeMe);
   }
 
+  /**
+   * offers the supplied heartbeat to the heartbeatQueue
+   * @param channelID The channelID to route the heartbeat to
+   * @param address The source of the heartbeat
+   */
   public void processHeartbeat(long channelID, InetSocketAddress address) {
     try {
       this.heartbeatQueue.offer(new Tuple<>(channelID, address));
@@ -91,6 +104,10 @@ public class HeartbeatManager {
     }
   }
 
+  /**
+   * @param channelID
+   * @return The active clients for the specified channel - if that channel exists and there are clients.
+   */
   public Optional<HashSet<InetSocketAddress>> getActiveClients(long channelID) {
     HeartbeatReceiver heartbeatReceiver = this.receivers.get(channelID);
     if (heartbeatReceiver != null) {

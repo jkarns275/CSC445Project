@@ -21,7 +21,13 @@ public abstract class Header {
    * @param out
    */
   abstract public void writeObject(ObjectOutputStream out) throws IOException;
+
+  /**
+   * @return the opcode associated with the header type. This allows a switch statement to be used when routing packets
+   * rather than clunky nested-ifs and instanceofs.
+   */
   abstract public int opcode();
+
   @Override abstract public int hashCode();
   @Override abstract public boolean equals(Object o);
 }
