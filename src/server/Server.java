@@ -1,6 +1,5 @@
 package server;
 
-import common.Constants;
 import networking.HeaderIOManager;
 import networking.HeartbeatManager;
 import networking.PacketSender;
@@ -18,6 +17,10 @@ import java.util.concurrent.*;
 
 import static common.Constants.*;
 
+/**
+ * @static private Constructor()
+ * @getInstance() to obtain instance
+ */
 public class Server {
     private final int MAX_THREADS = 15;
     private final int MAX_POOL_SIZE = 20;
@@ -45,34 +48,28 @@ public class Server {
     }
 
     private Server(int port) throws IOException {
-        this.init();
         headerManager = new HeaderIOManager(new InetSocketAddress(port),15);
         heartbeatManager = new HeartbeatManager();
     }
 
+    /**
+     * @return Server - the server instance
+     */
     public static Server getInstance() { return instance; }
 
-    /*
-     *
+    /**
+     * @param args
+     * Main method to be run when starting the server
      */
     public static void main(String[] args) {
         Server server = Server.getInstance();
         server.listen();
     }
 
-    /*
-     *
+    /**
+     * @param channelID - unique long identifying the particular channel
+     * @return Channel - channel corresponding to channelID
      */
-    private void init() {
-      /*
-        String[] names = {"Channel1","Channel2","Channel3"};
-        long[] ids = {1, 2, 3};
-        for (int i = 0; i < names.length; i++) {
-            channels.put(ids[i],new Channel(names[i],ids[i]));
-        }
-        */
-    }
-
     public static Channel getChannel(Long channelID) {
         if (channels.containsKey(channelID)) {
             return channels.get(channelID);
@@ -80,6 +77,10 @@ public class Server {
         return null;
     }
 
+    /**
+     * @param channel - new channel to be added to the hashmap of available channels
+     * @return boolean - indicates if channel was successfully added
+     */
     public static synchronized boolean addChannel(Channel channel) {
         for (Channel chan : channels.values()) {
             if (chan.channelName.equals(channel.channelName)) {
@@ -90,6 +91,10 @@ public class Server {
         return true;
     }
 
+    /**
+     * @param user - new user joining the chat server
+     * @return boolean - indicates if user was successfully added
+     */
     public static synchronized boolean addUser(User user) {
         if (!users.contains(user.address)) {
             users.add(user.address);
@@ -98,17 +103,21 @@ public class Server {
         return false;
     }
 
+    /**
+     * @param header - header to be sent to client
+     * @param address - address of the client the header will be sent to
+     */
     public static void sendPacket(Header header, InetSocketAddress address) {
         PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
         packetSender.run();
     }
 
-    /*
-     *
+    /**
+     * Starts the server listening on the initialized port number. Server starts up the heartbeat manager in preparation
+     * to connect with clients. Server receives header packets from clients, creates corresponding worker threads, and
+     * executes the worker threads with the thread pool so as not to block the main server thread.
      */
     public void listen() {
-        long lastChannelUpdateTime = 0;
-        long nanoTime = System.nanoTime();
         while (true) {
             try {
                 headerManager.update();
@@ -117,9 +126,7 @@ public class Server {
                   channel.update(clients.orElse(new HashSet<>()));
                 }
                 SocketRequest receive = headerManager.recv();
-//                int packetsRead = 0;
-                //while ((receive = headerManager.recv()) != null && packetsRead < 1) {
-//                  packetsRead += 1;
+
                 if (receive == null) continue;
                     Header header = receive.getHeader();
                     InetSocketAddress srcAddr = receive.getAddress();
@@ -169,10 +176,9 @@ public class Server {
 
                         default:
                             System.err.println("Received erroneous opcode, " + header.opcode() + ", from: " + srcAddr);
-                            ErrorHeader errorHeader = new ErrorHeader((byte)0x01,"Invalid opcode");
+                            ErrorHeader errorHeader = new ErrorHeader((byte) 0x01, "Invalid opcode");
                             executorPool.execute(new ErrorWorker(errorHeader, srcAddr));
                     }
-                //}
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

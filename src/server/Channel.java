@@ -26,22 +26,21 @@ public class Channel {
     public String channelName;
     private File log;
     private HashMap<String, User> users = new HashMap<>();
-    private ArrayList<String> usernames = new ArrayList<>();
     private ArrayList<User> usersToPurge = new ArrayList<>();
 
-  /*
+    /**
      * TreeMap buffering messages sent from the server to clients in the given channel.
      */
     private TreeMap<Long,BufferedMessageEntry> bufferedMessages = new TreeMap<>();
 
     public Channel(String channelName, long id) {
         this.channelName = channelName;
-//        this.log = new File("logs/" + channelName + ".txt");
         this.channelID = id;
     }
 
-    /*
-     *
+    /**
+     * @param user
+     * @return String assignedUsername
      */
     public synchronized String addUser(User user) {
         for (User u : users.values()) {
@@ -63,8 +62,8 @@ public class Channel {
         return user.username;
     }
 
-    /*
-     *
+    /**
+     * @param user - user to be removed
      */
     public synchronized void removeUser(User user) {
         if (!users.isEmpty())
@@ -74,8 +73,8 @@ public class Channel {
         users.remove(user.username);
     }
 
-    /*
-     *
+    /**
+     * @param header - header packet to be multicast to clients in the channel
      */
     public void sendPacket(Header header) {
         MulticastPacketSender packetSender = (MulticastPacketSender) Server.headerManager.multicastPacketSender(
@@ -86,23 +85,35 @@ public class Channel {
         packetSender.run();
     }
 
+    /**
+     * @param header - header packet to be sent to an individual client
+     * @param address - address of the client the header will be sent to
+     */
     public void sendPacket(Header header, InetSocketAddress address) {
         PacketSender packetSender = (PacketSender) Server.headerManager.packetSender(header,address);
         packetSender.run();
     }
 
+    /**
+     * @return long - the next message id index for the given channel
+     */
     public synchronized long getAndIncrementMsgID() {
         return ++msgID;
     }
 
-    public synchronized  long getLastLoggedMsg () {
-        return lastLoggedMsg;
-    }
-
+    /**
+     * @param increment - increments the index to indicate the number of the last logged message
+     */
     public synchronized void incrementLastLoggedMsg(long increment) {
         lastLoggedMsg += increment;
     }
 
+    /**
+     * @param heartbeatClients
+     * Update method removes buffered messages and disconnected clients.  The method checks if the number of buffered
+     * messages exceed the MAX_BUFFERED_MESSAGE limit, if so it remove the earlier half of the messages. If client
+     * heartbeats have not been received given the time constraint, the method removes specific clients from the channel.
+     */
     public synchronized void update(HashSet<InetSocketAddress> heartbeatClients) {
         Calendar calendar = Calendar.getInstance();
         if (lastLoggedMsg != msgID) {
@@ -131,44 +142,84 @@ public class Channel {
         }
     }
 
+    /**
+     * @param msgID
+     * @param header
+     * @throws FileNotFoundException
+     * Intended to log all chat messages and commands by writing them out to a text file.  This functionality is
+     * currectly not used.
+     */
     public synchronized void log(Long msgID, Header header) throws FileNotFoundException {
         PrintWriter pw = new PrintWriter(log);
         pw.println("[" + msgID + "] " + header.toString());
     }
 
+    /**
+     * @param msgID
+     * @param header
+     */
     public synchronized void addToBufferedTreeMap(long msgID, Header header) {
         this.bufferedMessages.put(msgID,new BufferedMessageEntry(header));
     }
 
+    /**
+     * @param msgID
+     */
     public synchronized void removeFromBufferedTreeMap(long msgID) {
         this.bufferedMessages.remove(msgID);
     }
 
+    /**
+     * @param msgID
+     * @return BUfferedMessageEntry - buffered message with message id matching msgID.
+     */
     public synchronized BufferedMessageEntry getFromBufferedTreeMap(Long msgID) {
         return this.bufferedMessages.get(msgID);
     }
 
+    /**
+     * @param s
+     * @return User with username matching s and removes user from hashmap
+     */
   public synchronized User removeUser(String s) {
     return this.users.remove(s);
   }
 
+    /**
+     * @param s
+     */
   public synchronized void muteUser(String s) {
       User u = this.users.get(s);
       if (u != null) u.setMuted(true);
   }
 
+    /**
+     * @param s
+     * @return boolean
+     */
   public synchronized boolean containsUser(String s) {
       return this.users.containsKey(s);
   }
 
+    /**
+     * @param s
+     * @return User with name matching s
+     */
   public synchronized User getUser(String s) {
     return this.users.get(s);
   }
 
+    /**
+     * @return the list of users currently used in the users hashmap keyset.
+     */
   public ArrayList<String> getUsers() {
     return new ArrayList<>(this.users.keySet());
   }
 
+    /**
+     * Class used to encapsulate write and command headers to be stored in the buffered messages treemap. Includes the
+     * time a header was received which is intended to be used with logging.
+     */
   public class BufferedMessageEntry implements Comparable<BufferedMessageEntry> {
         Header header;
         long militime;
@@ -186,6 +237,5 @@ public class Channel {
         public int compareTo(BufferedMessageEntry messageEntry) {
             return (int) (this.militime - messageEntry.militime);
         }
-
     }
 }
