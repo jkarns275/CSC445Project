@@ -123,6 +123,7 @@ public class Client implements Runnable {
            case OP_SOURCE:
               SourceHeader sourceHeader = (SourceHeader) header;
                 sourcesReceived.put(sourceHeader.getChannelName(), sourceHeader);
+                this.channels.put(sourceHeader.getChannelID(), sourceHeader.getAssignedUsername());
                 /*
                 prevHeader =  header;
                 sourceReceived = true;
@@ -213,8 +214,9 @@ public class Client implements Runnable {
     this.heartbeatSender.addChannel(channelID);
   }
 
-  public void removeChannelHeartbeat(long channelID) {
+  public void removeChannel(long channelID) {
     this.heartbeatSender.removeChannel(channelID);
+    this.channels.remove(channelID);
   }
 
   /*
