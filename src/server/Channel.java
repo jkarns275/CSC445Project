@@ -20,7 +20,7 @@ import java.util.TreeMap;
 public class Channel {
     private final int MAX_BUFFERED_MESSAGES = 2048;
     public long channelID;
-    private long msgID = 0;
+    private long msgID = 1;
     private long lastLoggedMsg = 0;
 
     public String channelName;

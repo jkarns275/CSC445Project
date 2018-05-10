@@ -7,14 +7,19 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MainFrame extends JFrame {
-    private static final String HELP_STRING = "This should have a list of commands";
+    private static final String HELP_STRING = "/join <Channel Name> <User Name> \n" +
+            String.format("%1$" + 41 + "s","/leave\n") +
+            String.format("%1$" + 55 + "s","/op mute <User Name>\n") +
+            String.format("%1$" + 57 + "s","/op unmute <User Name>\n") +
+            String.format("%1$" + 55 + "s","/op kick <User Name>\n") +
+            String.format("%1$" + 45 + "s","/listusers\n") +
+            String.format("%1$" + 48 + "s","/listchannels\n");
 
     private JTabbedPane channels;
     private ChannelPanel messagePanel;
@@ -104,7 +109,7 @@ public class MainFrame extends JFrame {
             e.printStackTrace();
             return false;
         }
-    }
+}
 
     public synchronized void printToMesssageChannel(String sender, String message) {
         messagePanel.addMessage(sender, message);
@@ -191,8 +196,98 @@ public class MainFrame extends JFrame {
                     */
                     client.sendCommandHeader(channel.getChannelID(), "/listusers");
                     client.sendCommandHeader(channel.getChannelID(), "/listchannels");
+
+                    /*
+                    //Send first message
+                    Runnable doSendMessage = () -> {
+                        client.sendMessage(channel.getChannelID(), -1, channel.getNick(), "First message");
+                    };
+                    doSendMessage.run();
+
+                    //leave the channel
+                    leaveWorker = new LeaveSwingWorker(client, channel.getChannelID());
+                    leaveWorker.execute();
+                    try {
+                        boolean leaveSuccess = leaveWorker.get(2, TimeUnit.SECONDS);
+                        if (leaveSuccess) {
+                            channels.remove(channel);
+                        }
+                        else {
+                            this.printToMesssageChannel("SERVER",
+                                    "Failed to leave channel " + channel.getChannelName());
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                        this.printToMesssageChannel("SERVER",
+                                "Failed to leave channel " + channel.getChannelName());
+                    }
+
+                    //join the channel again
+                    joinWorker = new JoinSwingWorker(client, "Channel1", "Guest");
+                    joinWorker.execute();
+                    try {
+                        Optional<ChannelPanel> newChannel = joinWorker.get(2, TimeUnit.SECONDS);
+                        if (newChannel.isPresent()) {
+                            addChannel(newChannel.get());
+                        } else {
+                            printToMesssageChannel("ERROR",
+                                    "Joining channel " + substrings[1] + " failed.");
+                        }
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                        printToMesssageChannel("ERROR",
+                                "Joining channel " + substrings[1] + " failed.");
+                    }
+
+                    //send second message
+                    doSendMessage = () -> {
+                        client.sendMessage(channel.getChannelID(), -1, channel.getNick(), "Second message");
+                    };
+                    doSendMessage.run();
+
+                    //mute user
+                    Runnable doMute = () -> {
+                        client.sendCommandHeader(channel.getChannelID(), "/op mute " + channel.getNick());
+                    };
+                    doMute.run();
+
+                    //send muted message
+                    client.sendMessage(channel.getChannelID(), -1, channel.getNick(), "This should be an error");
+
+                    //unmute user
+                    Runnable doUnMute = () -> {
+                        client.sendCommandHeader(channel.getChannelID(), "/op unmute " + channel.getNick());
+                    };
+                    doUnMute.run();
+
+                    //send third message
+                    doSendMessage = () -> {
+                        client.sendMessage(channel.getChannelID(), -1, channel.getNick(), "Third message");
+                    };
+                    SwingUtilities.invokeLater(doSendMessage);
+
+                    Runnable doCommands = () -> {
+                        client.sendCommandHeader(channel.getChannelID(), "/users");
+                        client.sendCommandHeader(channel.getChannelID(), "/channels");
+                    };
+                    SwingUtilities.invokeLater(doCommands);
+
+                    doSendMessage = () -> {
+                        client.sendMessage(channel.getChannelID(), -1, channel.getNick(), "Fourth message");
+                    };
+                    SwingUtilities.invokeLater(doSendMessage);
+                    */
+
                     break;
                 case "/help":
+                    printToMesssageChannel("HELP", HELP_STRING);
+                    break;
+                case "/listusers":
+                    client.sendCommandHeader(channel.getChannelID(), input);
+                    break;
+                case "/listchannels":
+                    client.sendCommandHeader(channel.getChannelID(), input);
+                    break;
                 default:
                   printToMesssageChannel("HELP", HELP_STRING);
                     // not a command
@@ -249,7 +344,7 @@ public class MainFrame extends JFrame {
             ChannelPanel channel = (ChannelPanel) channels.getComponentAt(i);
             if (channel.getChannelID() == channelID) {
                 channels.remove(channel);
-                client.removeChannelHeartbeat(channelID);
+                client.removeChannel(channelID);
                 return;
             }
         }

@@ -15,6 +15,7 @@ public class HeartbeatWorker implements Runnable {
     }
 
     public void run() {
+        System.out.println(header.getChannelID());
         Server.heartbeatManager.processHeartbeat(header.getChannelID(), address);
     }
 }
