@@ -10,6 +10,14 @@ import java.net.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ *   The socket manager is used to quickly and concurrently send messages through the same UDP socket. Moreover, the
+ * socket manager, in conjunction with the HeaderIOManager, requires and handles acks for every packet that is sent, and
+ * sends acks for every packet received.
+ *
+ *   This socket manager involves a background thread that receives and sends messages using BlockingQueues, and a
+ *   single datagram socket.
+ */
 public class SocketManager {
   // All opcodes will be considered 'Ackable' for now.
   //private static HashSet<Integer> ACKABLE_OPCODES = new HashSet<Integer>();

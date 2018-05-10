@@ -53,7 +53,6 @@ public class JoinWorker implements Runnable {
                 if (channel.channelID > newID) newID = channel.channelID;
             }
             Channel newChannel = new Channel(joinHeader.getChannelName(), ++newID);
-            System.out.println(newID);
             String assignedUsername = newChannel.addUser(user);
             boolean added = Server.addChannel(newChannel);
             if (added) {

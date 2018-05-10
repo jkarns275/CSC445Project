@@ -104,16 +104,15 @@ public class Channel {
     }
 
     public synchronized void update(HashSet<InetSocketAddress> heartbeatClients) {
-        Calendar calendar = Calendar.getInstance();
+/*        Calendar calendar = Calendar.getInstance();
         if (lastLoggedMsg != msgID) {
             for (long index = lastLoggedMsg+1; index != msgID; index++) {
                 BufferedMessageEntry e = bufferedMessages.get(index);
                 if (e == null) continue;
                 calendar.setTimeInMillis(e.militime);
-                System.out.println("[" + calendar.getTime() + "] " + e.header.toString());
                 lastLoggedMsg = index;
             }
-        }
+        }*/
         if (bufferedMessages.keySet().size() > MAX_BUFFERED_MESSAGES) {
             for (long i = msgID - MAX_BUFFERED_MESSAGES; i <= msgID - MAX_BUFFERED_MESSAGES/2; i++) {
                 bufferedMessages.remove(i);

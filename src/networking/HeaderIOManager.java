@@ -13,6 +13,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.*;
 
+/**
+ *   The HeaderIOManager is a poorly named class that handles sending and multicasting of headers to clients. The
+ * multicasting used is software-based. In order to add things to the SocketManager blocking queues without actually
+ * blocking, SendJob's are used. They ran in a thread pool and all they do is add to the blocking queue. SendJob's
+ * may be completely obsolete and unnecessary, since adding to a LinkedBlockingQueue probably won't take very long.
+ * In the event that a LinkedBlockingQueue were to be filled to capacity, the SendJobs would prevent blocking in the
+ * main server / client threads.
+ */
 public class HeaderIOManager {
   private final ThreadPoolExecutor pool;
   private final LinkedBlockingQueue<AckResult> ackResultQueue = new LinkedBlockingQueue<>(1024);
@@ -90,7 +98,6 @@ public class HeaderIOManager {
 
   public void processAckHeader(AckHeader ackHeader, InetSocketAddress source) throws InterruptedException {
     if (this.ackQueues.containsKey(ackHeader)) {
-//      System.out.println("Received ack for " + ackHeader);
       ArrayBlockingQueue<InetSocketAddress> queue = this.ackQueues.get(ackHeader);
       queue.put(source);
     }
